@@ -1,0 +1,748 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>CRM Weekly Dashboard</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+:root{--bg:#fff;--bg2:#f7f6f3;--bg3:#f1f0ec;--border:rgba(0,0,0,0.1);--text:#1a1a1a;--text2:#666;--text3:#999;--green:#3b6d11;--green-bg:#eaf3de;--red:#a32d2d;--red-bg:#fcebeb;--amber:#854f0b;--amber-bg:#faeeda;--blue:#185fa5;--blue-bg:#e6f1fb;--radius:12px;--radius-sm:8px;}
+@media(prefers-color-scheme:dark){:root{--bg:#1c1c1e;--bg2:#2c2c2e;--bg3:#3a3a3c;--border:rgba(255,255,255,0.12);--text:#f0f0f0;--text2:#aaa;--text3:#666;}}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--text);font-size:13px;min-height:100vh;}
+
+/* Header */
+.header{background:var(--bg);border-bottom:0.5px solid var(--border);padding:16px 24px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;}
+.header-left h1{font-size:16px;font-weight:600;}
+.header-left p{font-size:11px;color:var(--text2);margin-top:2px;}
+.btn{padding:7px 14px;border-radius:var(--radius-sm);border:0.5px solid var(--border);background:var(--bg2);color:var(--text);font-size:12px;cursor:pointer;font-weight:500;}
+.btn:hover{background:var(--bg3);}
+.btn-primary{background:var(--text);color:var(--bg);border-color:var(--text);}
+.btn-primary:hover{opacity:.85;}
+
+/* Paste modal */
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:200;align-items:center;justify-content:center;}
+.modal-overlay.open{display:flex;}
+.modal{background:var(--bg);border-radius:var(--radius);padding:24px;width:90%;max-width:640px;border:0.5px solid var(--border);}
+.modal h2{font-size:15px;font-weight:600;margin-bottom:6px;}
+.modal p{font-size:12px;color:var(--text2);margin-bottom:14px;line-height:1.6;}
+.sheet-tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px;}
+.sheet-tab{padding:5px 12px;border-radius:999px;border:0.5px solid var(--border);background:var(--bg2);font-size:11px;cursor:pointer;font-weight:500;color:var(--text2);}
+.sheet-tab.active{background:var(--text);color:var(--bg);border-color:var(--text);}
+.paste-area{width:100%;height:160px;border:0.5px solid var(--border);border-radius:var(--radius-sm);padding:10px;font-size:11px;font-family:monospace;background:var(--bg2);color:var(--text);resize:vertical;}
+.paste-area:focus{outline:2px solid var(--blue);border-color:transparent;}
+.modal-actions{display:flex;gap:8px;margin-top:12px;justify-content:flex-end;}
+.status-dot{width:8px;height:8px;border-radius:50%;background:#ccc;display:inline-block;margin-right:6px;}
+.status-dot.ok{background:#3b6d11;}
+.status-dot.empty{background:#ccc;}
+
+/* Main layout */
+.main{padding:20px 24px;}
+.tabs{display:flex;gap:0;border-bottom:0.5px solid var(--border);margin-bottom:20px;}
+.tab{padding:8px 16px;cursor:pointer;font-size:12px;font-weight:500;color:var(--text2);border-bottom:2px solid transparent;margin-bottom:-1px;background:none;border-top:none;border-left:none;border-right:none;}
+.tab.active{color:var(--text);border-bottom-color:var(--text);}
+.tab-panel{display:none;}.tab-panel.active{display:block;}
+
+/* KPI cards */
+.section{margin-bottom:24px;}
+.sec-hdr{display:flex;align-items:center;gap:8px;margin-bottom:10px;}
+.sec-badge{font-size:10px;font-weight:600;padding:2px 8px;border-radius:999px;background:var(--bg2);color:var(--text2);}
+.sec-title{font-size:14px;font-weight:600;}
+.sub-label{font-size:10px;font-weight:600;color:var(--text2);letter-spacing:.05em;margin-bottom:6px;margin-top:10px;text-transform:uppercase;}
+.kpi-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:8px;}
+.kpi{background:var(--bg2);border-radius:var(--radius-sm);padding:10px 12px;}
+.kpi-label{font-size:10px;color:var(--text2);margin-bottom:3px;line-height:1.3;}
+.kpi-val{font-size:20px;font-weight:600;}
+.kpi-delta{font-size:10px;margin-top:2px;}
+.dn{color:var(--red);}.dp{color:var(--green);}
+
+/* Tables */
+.card{background:var(--bg);border:0.5px solid var(--border);border-radius:var(--radius);overflow:hidden;}
+.tbl-wrap{overflow-x:auto;}
+table{width:100%;border-collapse:collapse;font-size:11px;}
+th{text-align:left;padding:7px 10px;border-bottom:0.5px solid var(--border);color:var(--text2);font-weight:600;white-space:nowrap;background:var(--bg2);}
+td{padding:7px 10px;border-bottom:0.5px solid var(--border);vertical-align:middle;}
+tr:last-child td{border-bottom:none;}
+tr:hover td{background:var(--bg2);}
+
+/* Badges */
+.badge{display:inline-block;padding:2px 8px;border-radius:999px;font-size:10px;font-weight:600;}
+.b-ok{background:var(--green-bg);color:var(--green);}
+.b-fail{background:var(--red-bg);color:var(--red);}
+.b-warn{background:var(--amber-bg);color:var(--amber);}
+.b-info{background:var(--blue-bg);color:var(--blue);}
+
+/* Charts */
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+.chart-wrap{position:relative;width:100%;height:180px;margin-top:6px;}
+
+/* Insight boxes */
+.insight{background:var(--bg2);border-radius:var(--radius-sm);padding:12px 14px;font-size:11px;line-height:1.7;}
+.insight p{margin-bottom:5px;}.insight p:last-child{margin-bottom:0;}
+
+/* Empty state */
+.empty-state{text-align:center;padding:60px 20px;color:var(--text2);}
+.empty-state h2{font-size:18px;font-weight:600;margin-bottom:8px;color:var(--text);}
+.empty-state p{font-size:13px;margin-bottom:20px;line-height:1.6;}
+.steps{text-align:left;display:inline-block;margin:0 auto 24px;}
+.steps li{font-size:12px;margin-bottom:6px;line-height:1.5;list-style:none;padding-left:0;}
+.steps li::before{content:attr(data-n);display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;border-radius:50%;background:var(--text);color:var(--bg);font-size:10px;font-weight:700;margin-right:8px;}
+
+.neg{color:var(--red);font-weight:500;}
+.pos{color:var(--green);font-weight:500;}
+@media(max-width:600px){.two-col{grid-template-columns:1fr;}.header{flex-direction:column;align-items:flex-start;gap:10px;}}
+</style>
+</head>
+<body>
+
+<!-- Header -->
+<div class="header">
+  <div class="header-left">
+    <h1>CRM weekly performance dashboard</h1>
+    <p id="header-subtitle"><span class="status-dot empty" id="status-dot"></span><span id="status-text">No data loaded — click "Update data" to get started</span></p>
+  </div>
+  <button class="btn btn-primary" onclick="openModal()">↑ Update data</button>
+</div>
+
+<!-- Paste Modal -->
+<div class="modal-overlay" id="modal">
+  <div class="modal">
+    <h2>Paste your weekly data</h2>
+    <p>Select a sheet tab below, then copy the data from Google Sheets (Ctrl+A → Ctrl+C) and paste it here. Repeat for each sheet. Your data never leaves your browser.</p>
+    <div class="sheet-tabs">
+      <button class="sheet-tab active" onclick="selectSheet('overview',this)">Overview</button>
+      <button class="sheet-tab" onclick="selectSheet('albEmail',this)">ALB Email</button>
+      <button class="sheet-tab" onclick="selectSheet('albPush',this)">ALB Push</button>
+      <button class="sheet-tab" onclick="selectSheet('xkxEmail',this)">XKX Email</button>
+      <button class="sheet-tab" onclick="selectSheet('xkxPush',this)">XKX Push</button>
+      <button class="sheet-tab" onclick="selectSheet('albInc',this)">ALB Incrementality</button>
+      <button class="sheet-tab" onclick="selectSheet('xkxInc',this)">XKX Incrementality</button>
+    </div>
+    <textarea class="paste-area" id="paste-area" placeholder="Paste sheet data here (Ctrl+V)…"></textarea>
+    <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px;" id="sheet-status-row"></div>
+    <div class="modal-actions">
+      <button class="btn" onclick="closeModal()">Cancel</button>
+      <button class="btn" onclick="saveCurrentSheet()">Save this sheet</button>
+      <button class="btn btn-primary" onclick="renderAll()">Render dashboard ↗</button>
+    </div>
+  </div>
+</div>
+
+<!-- Empty state -->
+<div id="empty-state" class="empty-state">
+  <h2>Welcome to your CRM dashboard</h2>
+  <p>Each week, paste your Google Sheet data here.<br>Everything runs in your browser — no data is ever uploaded anywhere.</p>
+  <ol class="steps">
+    <li data-n="1">Click <strong>Update data</strong> (top right)</li>
+    <li data-n="2">Select a sheet tab (Overview, ALB Email, etc.)</li>
+    <li data-n="3">Go to your Google Sheet, select all (Ctrl+A), copy (Ctrl+C)</li>
+    <li data-n="4">Paste into the text box (Ctrl+V) → Save this sheet</li>
+    <li data-n="5">Repeat for each sheet, then click Render dashboard</li>
+  </ol>
+  <button class="btn btn-primary" onclick="openModal()" style="font-size:13px;padding:10px 22px;">Get started →</button>
+</div>
+
+<!-- Dashboard -->
+<div id="dashboard" style="display:none;">
+  <div class="main">
+    <div class="tabs">
+      <button class="tab active" onclick="switchTab('overview',this)">Overview</button>
+      <button class="tab" onclick="switchTab('alb',this)">ALB campaigns</button>
+      <button class="tab" onclick="switchTab('xkx',this)">XKX campaigns</button>
+      <button class="tab" onclick="switchTab('inc',this)">Incrementality</button>
+    </div>
+
+    <!-- OVERVIEW -->
+    <div id="tab-overview" class="tab-panel active">
+
+      <!-- W/W Summary Banner -->
+      <div class="section" id="ww-summary-section" style="display:none;">
+        <div class="sec-hdr"><span class="sec-badge">w/w</span><span class="sec-title">Week-over-week summary</span></div>
+        <div id="ww-banner"></div>
+      </div>
+
+      <!-- Notes -->
+      <div class="section">
+        <div class="sec-hdr">
+          <span class="sec-badge">notes</span>
+          <span class="sec-title">Weekly notes</span>
+          <button class="btn" id="edit-notes-btn" onclick="toggleNotes()" style="margin-left:auto;font-size:11px;padding:4px 10px;">Edit</button>
+        </div>
+        <div id="notes-view" style="background:var(--color-background-secondary);border-radius:8px;padding:12px 14px;font-size:12px;line-height:1.7;min-height:60px;color:var(--color-text-secondary);">
+          <span id="notes-placeholder" style="color:var(--color-text-tertiary,#999);font-style:italic;">No notes yet — click Edit to add key highlights, challenges, or observations for this week.</span>
+          <div id="notes-content" style="display:none;white-space:pre-wrap;color:var(--color-text-primary);"></div>
+        </div>
+        <div id="notes-edit" style="display:none;">
+          <textarea id="notes-input" style="width:100%;min-height:120px;border:0.5px solid var(--color-border-tertiary);border-radius:8px;padding:10px;font-size:12px;font-family:inherit;background:var(--color-background-secondary);color:var(--color-text-primary);resize:vertical;margin-top:6px;line-height:1.7;" placeholder="Add your weekly notes here...&#10;e.g. Key highlights, challenges, next steps, observations..."></textarea>
+          <div style="display:flex;gap:6px;margin-top:6px;justify-content:flex-end;">
+            <button class="btn" onclick="cancelNotes()">Cancel</button>
+            <button class="btn btn-primary" onclick="saveNotes()">Save notes</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="section">
+        <div class="sec-hdr"><span class="sec-badge">ALB</span><span class="sec-title">Albania — latest week KPIs</span></div>
+        <div class="sub-label">Email</div>
+        <div class="kpi-grid" id="alb-email-kpis"></div>
+        <div class="sub-label">Push</div>
+        <div class="kpi-grid" id="alb-push-kpis"></div>
+      </div>
+      <div class="section">
+        <div class="sec-hdr"><span class="sec-badge">XKX</span><span class="sec-title">Kosovo — latest week KPIs</span></div>
+        <div class="sub-label">Email</div>
+        <div class="kpi-grid" id="xkx-email-kpis"></div>
+        <div class="sub-label">Push</div>
+        <div class="kpi-grid" id="xkx-push-kpis"></div>
+      </div>
+      <div class="section">
+        <div class="sec-hdr"><span class="sec-badge">trend</span><span class="sec-title">Email volume & open rate — weekly trend</span></div>
+        <div class="two-col">
+          <div><div class="sub-label">ALB — emails sent</div><div class="chart-wrap"><canvas id="albVolChart" role="img" aria-label="ALB email volume trend">ALB volume.</canvas></div></div>
+          <div><div class="sub-label">XKX — emails sent</div><div class="chart-wrap"><canvas id="xkxVolChart" role="img" aria-label="XKX email volume trend">XKX volume.</canvas></div></div>
+        </div>
+        <div class="two-col" style="margin-top:14px;">
+          <div><div class="sub-label">ALB — open rate %</div><div class="chart-wrap"><canvas id="albOrChart" role="img" aria-label="ALB open rate">ALB OR.</canvas></div></div>
+          <div><div class="sub-label">XKX — open rate %</div><div class="chart-wrap"><canvas id="xkxOrChart" role="img" aria-label="XKX open rate">XKX OR.</canvas></div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ALB CAMPAIGNS -->
+    <div id="tab-alb" class="tab-panel">
+      <div class="section">
+        <div class="sec-hdr"><span class="sec-badge">email</span><span class="sec-title">ALB email campaigns</span></div>
+        <div class="card"><div class="tbl-wrap"><table><thead><tr><th style="min-width:220px;">Campaign</th><th>Sent</th><th>Open %</th><th>CTOR</th><th>Purchases</th><th>Revenue</th><th>Unsub %</th></tr></thead><tbody id="alb-email-tbl"></tbody></table></div></div>
+      </div>
+      <div class="section">
+        <div class="sec-hdr"><span class="sec-badge">push</span><span class="sec-title">ALB push campaigns</span></div>
+        <div class="card"><div class="tbl-wrap"><table><thead><tr><th style="min-width:220px;">Campaign</th><th>Sent</th><th>Open %</th><th>Purchases</th><th>Revenue</th><th>Conv %</th></tr></thead><tbody id="alb-push-tbl"></tbody></table></div></div>
+      </div>
+    </div>
+
+    <!-- XKX CAMPAIGNS -->
+    <div id="tab-xkx" class="tab-panel">
+      <div class="section">
+        <div class="sec-hdr"><span class="sec-badge">email</span><span class="sec-title">XKX email campaigns</span></div>
+        <div class="card"><div class="tbl-wrap"><table><thead><tr><th style="min-width:220px;">Campaign</th><th>Sent</th><th>Open %</th><th>CTOR</th><th>Purchases</th><th>Revenue</th><th>Unsub %</th></tr></thead><tbody id="xkx-email-tbl"></tbody></table></div></div>
+      </div>
+      <div class="section">
+        <div class="sec-hdr"><span class="sec-badge">push</span><span class="sec-title">XKX push campaigns</span></div>
+        <div class="card"><div class="tbl-wrap"><table><thead><tr><th style="min-width:220px;">Campaign</th><th>Sent</th><th>Open %</th><th>Purchases</th><th>Revenue</th><th>Conv %</th></tr></thead><tbody id="xkx-push-tbl"></tbody></table></div></div>
+      </div>
+    </div>
+
+    <!-- INCREMENTALITY -->
+    <div id="tab-inc" class="tab-panel">
+      <div class="section">
+        <div class="sec-hdr"><span class="sec-badge">ALB</span><span class="sec-title">Albania incrementality</span></div>
+        <div class="card"><div class="tbl-wrap"><table><thead><tr><th style="min-width:220px;">Program</th><th>Period</th><th>Exposed</th><th>Inc. orders</th><th>Inc. GOV</th><th>Inc. users</th><th>Result</th></tr></thead><tbody id="alb-inc-tbl"></tbody></table></div></div>
+      </div>
+      <div class="section">
+        <div class="sec-hdr"><span class="sec-badge">XKX</span><span class="sec-title">Kosovo incrementality</span></div>
+        <div class="card"><div class="tbl-wrap"><table><thead><tr><th style="min-width:220px;">Program</th><th>Period</th><th>Exposed</th><th>Inc. orders</th><th>Inc. GOV</th><th>Inc. users</th><th>Result</th></tr></thead><tbody id="xkx-inc-tbl"></tbody></table></div></div>
+      </div>
+      <div class="section">
+        <div class="sec-hdr"><span class="sec-badge">viz</span><span class="sec-title">Incremental GOV by program</span></div>
+        <div style="position:relative;width:100%;height:260px;"><canvas id="incChart" role="img" aria-label="Incremental GOV chart">Inc GOV.</canvas></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ---- State ----
+const sheets = {overview:'',albEmail:'',albPush:'',xkxEmail:'',xkxPush:'',albInc:'',xkxInc:''};
+let currentSheet = 'overview';
+let charts = {};
+
+// ---- Modal ----
+function openModal(){
+  document.getElementById('modal').classList.add('open');
+  document.getElementById('paste-area').value = sheets[currentSheet] || '';
+  renderSheetStatus();
+}
+function closeModal(){document.getElementById('modal').classList.remove('open');}
+function selectSheet(id, btn){
+  saveCurrentSheet();
+  currentSheet = id;
+  document.querySelectorAll('.sheet-tab').forEach(t=>t.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('paste-area').value = sheets[id] || '';
+  document.getElementById('paste-area').placeholder = `Paste your "${id}" sheet data here…`;
+}
+function saveCurrentSheet(){
+  const val = document.getElementById('paste-area').value.trim();
+  if(val) sheets[currentSheet] = val;
+  renderSheetStatus();
+}
+function renderSheetStatus(){
+  const labels={overview:'Overview',albEmail:'ALB Email',albPush:'ALB Push',xkxEmail:'XKX Email',xkxPush:'XKX Push',albInc:'ALB Inc.',xkxInc:'XKX Inc.'};
+  const row = document.getElementById('sheet-status-row');
+  row.innerHTML = Object.keys(sheets).map(k=>`
+    <span style="font-size:10px;color:${sheets[k]?'var(--green)':'var(--text3)'};display:flex;align-items:center;gap:3px;">
+      <span style="width:6px;height:6px;border-radius:50%;background:${sheets[k]?'var(--green)':'var(--border)'};display:inline-block;"></span>
+      ${labels[k]}
+    </span>`).join('');
+}
+
+// ---- CSV Parser ----
+function parseTSV(raw){
+  if(!raw) return [];
+  return raw.trim().split('\n').map(r=>r.split('\t').map(c=>c.trim().replace(/^"|"$/g,'')));
+}
+
+function numVal(s){
+  if(!s||s==='-'||s==='N/A'||s==='#VALUE!'||s==='TBC') return null;
+  return parseFloat(s.replace(/[€,%\s]/g,'').replace(/,/g,'')) || 0;
+}
+function pct(s){
+  if(!s) return null;
+  const v = parseFloat(s.replace('%',''));
+  return isNaN(v)?null:v;
+}
+function fmt(v,decimals=0){
+  if(v===null||v===undefined) return '—';
+  return Number(v).toLocaleString('en',{minimumFractionDigits:decimals,maximumFractionDigits:decimals});
+}
+function fmtPct(v){return v===null?'—':v.toFixed(2)+'%';}
+function sn(n,max=42){return n&&n.length>max?n.slice(0,max-1)+'…':n||'—';}
+
+function orBadge(v){
+  if(v===null) return '—';
+  const cls = v>=40?'b-ok':v>=20?'b-warn':'b-fail';
+  return `<span class="badge ${cls}">${v.toFixed(2)}%</span>`;
+}
+function incBadge(gov){
+  if(gov===null) return '<span class="badge b-info">TBC</span>';
+  if(gov>0) return '<span class="badge b-ok">✅ Positive</span>';
+  if(gov<-5000) return '<span class="badge b-fail">❌ Negative</span>';
+  return '<span class="badge b-warn">⚠️ Mixed</span>';
+}
+function negPos(v,prefix=''){
+  if(v===null) return '—';
+  const cls = v<0?'neg':'pos';
+  const sign = v>0?'+':'';
+  return `<span class="${cls}">${sign}${prefix}${fmt(v)}</span>`;
+}
+
+// ---- Parse Overview ----
+function parseOverview(){
+  const rows = parseTSV(sheets.overview);
+  if(!rows.length) return null;
+
+  const find = (key) => rows.find(r=>r[1]&&r[1].includes(key));
+  const getRow = (key) => {
+    const r = find(key);
+    return r ? r.slice(2) : [];
+  };
+
+  // Weeks are in row index where OKR is
+  const hdrRow = rows.find(r=>r[1]==='OKR');
+  const weeks = hdrRow ? hdrRow.slice(2,11).filter(w=>w&&w!=='w/w') : [];
+
+  const albSection = rows.findIndex(r=>r[1]==='ALB LM KPIs');
+  const xkxSection = rows.findIndex(r=>r[1]==='XKX LM KPIs');
+
+  function getMetric(startIdx, key){
+    for(let i=startIdx;i<Math.min(startIdx+20,rows.length);i++){
+      if(rows[i][1]&&rows[i][1].includes(key)) return rows[i].slice(2);
+    }
+    return [];
+  }
+
+  const alb = {
+    emailSent: getMetric(albSection,'Emails sent'),
+    emailOR: getMetric(albSection,'Email OR'),
+    emailCTOR: getMetric(albSection,'Email CTOR'),
+    emailCTC: getMetric(albSection,'Email CTC'),
+    unsub: getMetric(albSection,'Unsubscribe rate'),
+    pushSent: getMetric(albSection,'Push sent'),
+    pushOR: getMetric(albSection,'Push OR'),
+    pushCTC: getMetric(albSection,'Push CTC'),
+    audience: getMetric(albSection,'Addressable'),
+  };
+  const xkx = {
+    emailSent: getMetric(xkxSection,'Emails sent'),
+    emailOR: getMetric(xkxSection,'Email OR'),
+    emailCTOR: getMetric(xkxSection,'Email CTOR'),
+    emailCTC: getMetric(xkxSection,'Email CTC'),
+    unsub: getMetric(xkxSection,'Unsubscribe rate'),
+    pushSent: getMetric(xkxSection,'Push sent'),
+    pushOR: getMetric(xkxSection,'Push OR'),
+    pushCTC: getMetric(xkxSection,'Push CTC'),
+    audience: getMetric(xkxSection,'Addressable'),
+  };
+
+  return {weeks, alb, xkx};
+}
+
+// ---- Parse Campaign Sheets ----
+function parseCampaignSheet(raw, isPush){
+  const rows = parseTSV(raw);
+  if(rows.length<2) return [];
+  // Find header row
+  const hdrIdx = rows.findIndex(r=>r.some(c=>c.includes('Campaign Name')||c.includes('Campaign')));
+  if(hdrIdx<0) return [];
+  const hdr = rows[hdrIdx];
+  const col = (name) => hdr.findIndex(h=>h.includes(name));
+
+  const cName = col('Campaign Name');
+  const cSent = col('Message Sent')||col('Sent');
+  const cOR = col('Open Rate');
+  const cCTOR = col('CTOR');
+  const cPurch = col('Count Purchases');
+  const cRev = col('Transaction Value')||col('Revenue');
+  const cUnsub = col('Unsubscribe');
+  const cConv = col('Click to Conversion');
+
+  return rows.slice(hdrIdx+1)
+    .filter(r=>r[cName]&&r[cName].length>2&&!r[cName].startsWith('📌'))
+    .map(r=>({
+      name: r[cName]||'',
+      sent: numVal(r[cSent]),
+      or: pct(r[cOR]),
+      ctor: r[cCTOR]||'—',
+      purchases: numVal(r[cPurch]),
+      revenue: r[cRev]||'€0',
+      unsub: r[cUnsub]||'—',
+      conv: r[cConv]||'—',
+    }));
+}
+
+// ---- Parse Incrementality ----
+function parseIncSheet(raw){
+  const rows = parseTSV(raw);
+  if(rows.length<2) return [];
+  const hdrIdx = rows.findIndex(r=>r.some(c=>c.includes('Program Name')||c.includes('Program')));
+  if(hdrIdx<0) return [];
+  const hdr = rows[hdrIdx];
+  const col = (name) => hdr.findIndex(h=>h.includes(name));
+  const cDate = 0;
+  const cPeriod = col('Period')||col('Breakdown');
+  const cProg = col('Program');
+  const cExp = col('Exposed');
+  const cVol = col('Volume - Incremental')||col('Inc');
+  const cGov = col('GOV - Incremental');
+  const cUsers = col('Active Users - Incremental');
+
+  return rows.slice(hdrIdx+1)
+    .filter(r=>r[cProg]&&r[cProg].length>2)
+    .map(r=>({
+      date: r[cDate]||'',
+      period: r[cPeriod]||'',
+      program: r[cProg]||'',
+      exposed: numVal(r[cExp]),
+      volume: numVal(r[cVol]),
+      gov: numVal(r[cGov]),
+      users: numVal(r[cUsers]),
+    }));
+}
+
+// ---- Render KPIs ----
+function kpiCard(label, val, delta){
+  const dClass = delta===null?'':delta.startsWith('▲')?'dp':'dn';
+  return `<div class="kpi"><div class="kpi-label">${label}</div><div class="kpi-val">${val}</div>${delta?`<div class="kpi-delta ${dClass}">${delta}</div>`:''}</div>`;
+}
+
+function renderKPIs(data, country){
+  const last = (arr) => {
+    for(let i=arr.length-1;i>=0;i--){if(arr[i]&&arr[i]!=='N/A'&&arr[i]!=='#VALUE!') return arr[i];}
+    return '—';
+  };
+  const prev = (arr) => {
+    let found=false;
+    for(let i=arr.length-1;i>=0;i--){
+      if(arr[i]&&arr[i]!=='N/A'&&arr[i]!=='#VALUE!'){
+        if(found) return arr[i];
+        found=true;
+      }
+    }
+    return null;
+  };
+  const ww = (arr) => {
+    const wwIdx = arr.findIndex((_,i)=>i===arr.length-1);
+    // last element is w/w
+    const v = arr[arr.length-1];
+    if(!v||v==='#VALUE!') return null;
+    const n = parseFloat(v.replace('%',''));
+    if(isNaN(n)) return null;
+    return (n>=0?'▲ ':'▼ ')+Math.abs(n).toFixed(0)+'% w/w';
+  };
+
+  const d = data[country];
+  const eKpis = document.getElementById(`${country}-email-kpis`);
+  const pKpis = document.getElementById(`${country}-push-kpis`);
+  if(!eKpis||!pKpis) return;
+
+  eKpis.innerHTML = [
+    kpiCard('Emails sent', last(d.emailSent).replace(/"/g,''), ww(d.emailSent)),
+    kpiCard('Open rate', last(d.emailOR), ww(d.emailOR)),
+    kpiCard('CTOR', last(d.emailCTOR), ww(d.emailCTOR)),
+    kpiCard('Email CTC', last(d.emailCTC), ww(d.emailCTC)),
+    kpiCard('Unsub rate', last(d.unsub), ww(d.unsub)),
+  ].join('');
+
+  pKpis.innerHTML = [
+    kpiCard('Push sent', last(d.pushSent).replace(/"/g,''), ww(d.pushSent)),
+    kpiCard('Push OR', last(d.pushOR), ww(d.pushOR)),
+    kpiCard('Push CTC', last(d.pushCTC), ww(d.pushCTC)),
+    kpiCard('Addressable', last(d.audience).replace(/"/g,''), ww(d.audience)),
+  ].join('');
+}
+
+// ---- Render Trend Charts ----
+function makeLineChart(id, labels, data, color){
+  if(charts[id]) charts[id].destroy();
+  const ctx = document.getElementById(id);
+  if(!ctx) return;
+  charts[id] = new Chart(ctx, {
+    type:'line',
+    data:{labels,datasets:[{data,borderColor:color,backgroundColor:color+'22',borderWidth:2,pointRadius:3,fill:true,tension:.3}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{font:{size:9},maxRotation:40}},y:{ticks:{font:{size:9}}}}}
+  });
+}
+
+function parseNum(s){
+  if(!s) return 0;
+  return parseFloat(s.replace(/[",\s]/g,''))||0;
+}
+function parsePct(s){
+  if(!s) return 0;
+  return parseFloat(s.replace('%',''))||0;
+}
+
+// ---- Render Campaign Tables ----
+function renderEmailTable(tbodyId, rows){
+  const tb = document.getElementById(tbodyId);
+  if(!tb) return;
+  if(!rows.length){tb.innerHTML=`<tr><td colspan="7" style="color:var(--text3);text-align:center;padding:20px;">No data — paste the sheet above</td></tr>`;return;}
+  tb.innerHTML = rows.map(r=>`<tr>
+    <td style="font-size:10px;">${sn(r.name)}</td>
+    <td>${r.sent!==null?fmt(r.sent):'—'}</td>
+    <td>${orBadge(r.or)}</td>
+    <td>${r.ctor}</td>
+    <td>${r.purchases!==null?fmt(r.purchases):'—'}</td>
+    <td>${r.revenue}</td>
+    <td>${r.unsub}</td>
+  </tr>`).join('');
+}
+
+function renderPushTable(tbodyId, rows){
+  const tb = document.getElementById(tbodyId);
+  if(!tb) return;
+  if(!rows.length){tb.innerHTML=`<tr><td colspan="6" style="color:var(--text3);text-align:center;padding:20px;">No data — paste the sheet above</td></tr>`;return;}
+  tb.innerHTML = rows.map(r=>`<tr>
+    <td style="font-size:10px;">${sn(r.name)}</td>
+    <td>${r.sent!==null?fmt(r.sent):'—'}</td>
+    <td>${r.or!==null?orBadge(r.or):r.or}</td>
+    <td>${r.purchases!==null?fmt(r.purchases):'—'}</td>
+    <td>${r.revenue}</td>
+    <td>${r.conv}</td>
+  </tr>`).join('');
+}
+
+function renderIncTable(tbodyId, rows){
+  const tb = document.getElementById(tbodyId);
+  if(!tb) return;
+  if(!rows.length){tb.innerHTML=`<tr><td colspan="7" style="color:var(--text3);text-align:center;padding:20px;">No data — paste the sheet above</td></tr>`;return;}
+  tb.innerHTML = rows.map(r=>`<tr>
+    <td style="font-size:10px;">${sn(r.program,40)}</td>
+    <td>${r.period}</td>
+    <td>${r.exposed!==null?fmt(r.exposed):'—'}</td>
+    <td>${negPos(r.volume)}</td>
+    <td>${negPos(r.gov,'€')}</td>
+    <td>${negPos(r.users)}</td>
+    <td>${incBadge(r.gov)}</td>
+  </tr>`).join('');
+}
+
+function renderIncChart(albRows, xkxRows){
+  const all = [...albRows,...xkxRows].filter(r=>r.gov!==null);
+  if(!all.length) return;
+  const labels = all.map(r=>sn(r.program.replace('ADHOC_','').replace('_ACTIVE',''),28)+'\n'+r.period.replace('. ',''));
+  const vals = all.map(r=>r.gov);
+  if(charts['incChart']) charts['incChart'].destroy();
+  const ctx = document.getElementById('incChart');
+  if(!ctx) return;
+  charts['incChart'] = new Chart(ctx,{
+    type:'bar',
+    data:{labels,datasets:[{label:'Inc. GOV (€)',data:vals,
+      backgroundColor:vals.map(v=>v>=0?'#3b6d1199':'#a32d2d99'),
+      borderColor:vals.map(v=>v>=0?'#3b6d11':'#a32d2d'),borderWidth:1}]},
+    options:{responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:false}},
+      scales:{x:{ticks:{font:{size:8},maxRotation:45}},
+        y:{ticks:{font:{size:9},callback:v=>'€'+(v/1000).toFixed(0)+'k'}}}}
+  });
+}
+
+// ---- Main Render ----
+function renderAll(){
+  saveCurrentSheet();
+  closeModal();
+
+  const hasAny = Object.values(sheets).some(v=>v.length>0);
+  if(!hasAny) return;
+
+  document.getElementById('empty-state').style.display='none';
+  document.getElementById('dashboard').style.display='block';
+
+  // Overview
+  if(sheets.overview){
+    const ov = parseOverview();
+    if(ov){
+      renderKPIs(ov,'alb');
+      renderKPIs(ov,'xkx');
+
+      const wks = ov.weeks.filter(w=>w&&w!=='w/w');
+      const albVol = ov.alb.emailSent.slice(0,wks.length).map(parseNum);
+      const xkxVol = ov.xkx.emailSent.slice(0,wks.length).map(parseNum);
+      const albOR = ov.alb.emailOR.slice(0,wks.length).map(parsePct);
+      const xkxOR = ov.xkx.emailOR.slice(0,wks.length).map(parsePct);
+
+      buildWWBanner(ov);
+      makeLineChart('albVolChart',wks,albVol,'#378add');
+      makeLineChart('xkxVolChart',wks,xkxVol,'#1d9e75');
+      makeLineChart('albOrChart',wks,albOR,'#378add');
+      makeLineChart('xkxOrChart',wks,xkxOR,'#1d9e75');
+
+      // Update header
+      const lastWk = wks[wks.length-1]||'';
+      document.getElementById('status-dot').className='status-dot ok';
+      document.getElementById('status-text').textContent=`Data loaded · Latest week: ${lastWk}`;
+      document.getElementById('header-subtitle').innerHTML=`<span class="status-dot ok" id="status-dot"></span><span id="status-text">Data loaded · Latest week: ${lastWk}</span>`;
+    }
+  }
+
+  // Campaign tables
+  if(sheets.albEmail) renderEmailTable('alb-email-tbl', parseCampaignSheet(sheets.albEmail,false));
+  if(sheets.albPush) renderPushTable('alb-push-tbl', parseCampaignSheet(sheets.albPush,true));
+  if(sheets.xkxEmail) renderEmailTable('xkx-email-tbl', parseCampaignSheet(sheets.xkxEmail,false));
+  if(sheets.xkxPush) renderPushTable('xkx-push-tbl', parseCampaignSheet(sheets.xkxPush,true));
+
+  // Incrementality
+  const albInc = sheets.albInc ? parseIncSheet(sheets.albInc) : [];
+  const xkxInc = sheets.xkxInc ? parseIncSheet(sheets.xkxInc) : [];
+  renderIncTable('alb-inc-tbl', albInc);
+  renderIncTable('xkx-inc-tbl', xkxInc);
+  if(albInc.length||xkxInc.length) renderIncChart(albInc, xkxInc);
+}
+
+// ---- Notes ----
+let savedNotes = '';
+function toggleNotes(){
+  const edit = document.getElementById('notes-edit');
+  const view = document.getElementById('notes-view');
+  const btn = document.getElementById('edit-notes-btn');
+  if(edit.style.display==='none'){
+    document.getElementById('notes-input').value = savedNotes;
+    edit.style.display='block';
+    view.style.display='none';
+    btn.textContent='Cancel';
+  } else {
+    cancelNotes();
+  }
+}
+function cancelNotes(){
+  document.getElementById('notes-edit').style.display='none';
+  document.getElementById('notes-view').style.display='block';
+  document.getElementById('edit-notes-btn').textContent='Edit';
+}
+function saveNotes(){
+  savedNotes = document.getElementById('notes-input').value.trim();
+  const ph = document.getElementById('notes-placeholder');
+  const ct = document.getElementById('notes-content');
+  if(savedNotes){
+    ph.style.display='none';
+    ct.style.display='block';
+    ct.textContent = savedNotes;
+  } else {
+    ph.style.display='';
+    ct.style.display='none';
+  }
+  cancelNotes();
+}
+
+// ---- W/W Banner ----
+function buildWWBanner(ov){
+  const section = document.getElementById('ww-summary-section');
+  const banner = document.getElementById('ww-banner');
+  if(!ov){ section.style.display='none'; return; }
+
+  const metrics = [
+    {label:'ALB emails sent', arr:ov.alb.eS, fmt:'num'},
+    {label:'ALB open rate', arr:ov.alb.eOR, fmt:'pct'},
+    {label:'ALB CTOR', arr:ov.alb.eCTOR, fmt:'pct'},
+    {label:'ALB push sent', arr:ov.alb.pS, fmt:'num'},
+    {label:'XKX emails sent', arr:ov.xkx.eS, fmt:'num'},
+    {label:'XKX open rate', arr:ov.xkx.eOR, fmt:'pct'},
+    {label:'XKX CTOR', arr:ov.xkx.eCTOR, fmt:'pct'},
+    {label:'XKX push sent', arr:ov.xkx.pS, fmt:'num'},
+  ];
+
+  const getLast2 = (arr) => {
+    const vals = [];
+    for(let i=arr.length-1;i>=0&&vals.length<2;i--){
+      if(arr[i]&&arr[i]!=='N/A'&&arr[i]!=='#VALUE!') vals.push(arr[i]);
+    }
+    return vals; // [latest, prev]
+  };
+
+  const ups=[], downs=[], neutral=[];
+  metrics.forEach(m=>{
+    const [cur,prev] = getLast2(m.arr);
+    if(!cur||!prev) return;
+    const cn = parseFloat(cur.replace(/[%,"\s]/g,''));
+    const pn = parseFloat(prev.replace(/[%,"\s]/g,''));
+    if(isNaN(cn)||isNaN(pn)||pn===0) return;
+    const delta = ((cn-pn)/Math.abs(pn)*100);
+    const dispCur = m.fmt==='pct'?cn.toFixed(2)+'%':Number(cn).toLocaleString();
+    const dispDelta = (delta>=0?'+':'')+delta.toFixed(1)+'%';
+    const obj = {label:m.label, cur:dispCur, delta:dispDelta, raw:delta};
+    if(delta>2) ups.push(obj);
+    else if(delta<-2) downs.push(obj);
+    else neutral.push(obj);
+  });
+
+  // Auto-generate summary sentence
+  const wk = ov.weeks.filter(w=>w&&w!=='w/w');
+  const latestWk = wk[wk.length-1]||'this week';
+  const prevWk = wk[wk.length-2]||'last week';
+
+  let summaryParts = [];
+  if(ups.length) summaryParts.push(`<span style="color:#3b6d11;font-weight:500;">${ups.map(u=>u.label+' ('+u.delta+')').join(', ')}</span> improved`);
+  if(downs.length) summaryParts.push(`<span style="color:#a32d2d;font-weight:500;">${downs.map(d=>d.label+' ('+d.delta+')').join(', ')}</span> declined`);
+  const summary = summaryParts.length ? summaryParts.join(' · ') : 'Metrics are stable week over week.';
+
+  const pill = (o, isUp) => `<div style="background:var(--color-background-secondary);border-radius:8px;padding:9px 12px;display:flex;flex-direction:column;gap:2px;border-left:3px solid ${isUp?'#3b6d11':'#a32d2d'};">
+    <span style="font-size:10px;color:var(--color-text-secondary);">${o.label}</span>
+    <span style="font-size:14px;font-weight:600;">${o.cur}</span>
+    <span style="font-size:11px;color:${isUp?'#3b6d11':'#a32d2d'};font-weight:500;">${o.delta} vs prev week</span>
+  </div>`;
+
+  banner.innerHTML = `
+    <div style="background:var(--color-background-secondary);border-radius:8px;padding:12px 14px;font-size:12px;line-height:1.7;margin-bottom:12px;">
+      <span style="font-weight:600;">Week ${latestWk} vs ${prevWk}:</span> ${summary}
+    </div>
+    ${ups.length||downs.length ? `<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:8px;">
+      ${ups.map(u=>pill(u,true)).join('')}
+      ${downs.map(d=>pill(d,false)).join('')}
+    </div>` : ''}
+  `;
+  section.style.display='block';
+}
+
+// Tab switching
+function switchTab(id,btn){
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
+  document.getElementById('tab-'+id).classList.add('active');
+  btn.classList.add('active');
+}
+
+// Init status
+renderSheetStatus();
+</script>
+</body>
+</html>
