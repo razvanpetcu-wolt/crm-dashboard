@@ -2,649 +2,417 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>CRM Weekly Dashboard</title>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ALB Order Volume Summary — Apr–May 2026</title>
 <style>
-*{box-sizing:border-box;margin:0;padding:0;}
-body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f5f5f7;color:#1a1a1a;font-size:13px;}
-.header{background:#fff;border-bottom:1px solid #e5e5e5;padding:14px 24px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;}
-.header h1{font-size:16px;font-weight:700;color:#1a1a1a;}
-.header p{font-size:11px;color:#888;margin-top:2px;}
-.btn{padding:7px 16px;border-radius:8px;border:1px solid #ddd;background:#fff;color:#1a1a1a;font-size:12px;cursor:pointer;font-weight:600;}
-.btn:hover{background:#f5f5f5;}
-.btn-primary{background:#1a1a1a;color:#fff;border-color:#1a1a1a;}
-.btn-primary:hover{background:#333;}
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Syne:wght@700;800&display=swap');
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg: #0f1117;
+    --card: #1e2332;
+    --border: #2a2f42;
+    --resto: #ff6b35;
+    --grocery: #4fc3f7;
+    --text: #e8eaf2;
+    --muted: #7a80a0;
+    --white: #ffffff;
+  }
+  body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; padding: 0 0 60px 0; }
 
-/* Modal */
-.overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:200;align-items:center;justify-content:center;}
-.overlay.open{display:flex;}
-.modal{background:#fff;border-radius:14px;padding:24px;width:94%;max-width:620px;max-height:88vh;overflow-y:auto;}
-.modal h2{font-size:15px;font-weight:700;margin-bottom:6px;}
-.modal-desc{font-size:12px;color:#666;margin-bottom:14px;line-height:1.6;}
-.stabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px;}
-.stab{padding:5px 12px;border-radius:999px;border:1px solid #ddd;background:#f5f5f7;font-size:11px;cursor:pointer;font-weight:600;color:#666;transition:all .15s;}
-.stab.active{background:#1a1a1a;color:#fff;border-color:#1a1a1a;}
-.stab.done{border-color:#3b6d11;color:#3b6d11;background:#eaf3de;}
-.stab.done.active{background:#3b6d11;color:#fff;}
-textarea.paste{width:100%;height:160px;border:1px solid #ddd;border-radius:8px;padding:10px;font-size:11px;font-family:monospace;background:#f9f9f9;resize:vertical;}
-textarea.paste:focus{outline:2px solid #1a1a1a;border-color:transparent;}
-.mactions{display:flex;gap:8px;margin-top:12px;justify-content:flex-end;}
-.hint{font-size:10px;color:#999;margin-top:6px;}
+  .header { background: linear-gradient(135deg, #1a1f35 0%, #0f1117 60%); border-bottom: 1px solid var(--border); padding: 48px 40px 40px; position: relative; overflow: hidden; }
+  .header::before { content: ''; position: absolute; top: -80px; right: -80px; width: 320px; height: 320px; background: radial-gradient(circle, rgba(255,107,53,0.12) 0%, transparent 70%); pointer-events: none; }
+  .header-eyebrow { font-size: 11px; font-weight: 600; letter-spacing: 2.5px; text-transform: uppercase; color: var(--muted); margin-bottom: 12px; }
+  .header h1 { font-family: 'Syne', sans-serif; font-size: clamp(26px, 4vw, 46px); font-weight: 800; color: var(--white); line-height: 1.1; margin-bottom: 10px; }
+  .header-sub { font-size: 15px; color: var(--muted); }
+  .pill { display: inline-block; background: rgba(255,107,53,0.15); color: var(--resto); border: 1px solid rgba(255,107,53,0.3); border-radius: 20px; font-size: 11px; font-weight: 600; letter-spacing: 1px; text-transform: uppercase; padding: 3px 10px; margin-left: 12px; vertical-align: middle; }
 
-/* Dashboard */
-.page{padding:20px 24px;max-width:1200px;margin:0 auto;}
-.tabs{display:flex;border-bottom:1px solid #e5e5e5;margin-bottom:20px;background:#fff;padding:0 24px;position:sticky;top:57px;z-index:90;}
-.tab{padding:10px 16px;cursor:pointer;font-size:12px;font-weight:600;color:#888;border-bottom:2px solid transparent;margin-bottom:-1px;background:none;border-top:none;border-left:none;border-right:none;}
-.tab.active{color:#1a1a1a;border-bottom-color:#1a1a1a;}
-.tp{display:none;}.tp.active{display:block;}
+  .container { max-width: 1100px; margin: 0 auto; padding: 0 40px; }
+  .section { margin-top: 44px; }
+  .section-label { font-size: 11px; font-weight: 600; letter-spacing: 2px; text-transform: uppercase; color: var(--muted); margin-bottom: 20px; padding-bottom: 10px; border-bottom: 1px solid var(--border); }
 
-/* Cards & grids */
-.grid4{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;}
-.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;}
-.grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
-.kcard{background:#fff;border-radius:12px;padding:14px 16px;border:1px solid #e5e5e5;}
-.kcard .lbl{font-size:10px;color:#888;font-weight:600;text-transform:uppercase;letter-spacing:.04em;margin-bottom:4px;}
-.kcard .val{font-size:22px;font-weight:700;color:#1a1a1a;}
-.kcard .delta{font-size:11px;margin-top:4px;font-weight:600;}
-.up{color:#3b6d11;}.down{color:#a32d2d;}.neu{color:#888;}
-.section{margin-bottom:24px;}
-.sh{display:flex;align-items:center;gap:8px;margin-bottom:12px;}
-.stag{font-size:10px;font-weight:700;padding:3px 8px;border-radius:999px;background:#f0f0f0;color:#666;}
-.stitle{font-size:14px;font-weight:700;}
-.sublbl{font-size:10px;font-weight:700;color:#888;text-transform:uppercase;letter-spacing:.05em;margin:12px 0 6px;}
+  /* KPIs */
+  .kpi-wrapper { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  @media (max-width: 640px) { .kpi-wrapper { grid-template-columns: 1fr; } }
+  .kpi-group { display: flex; flex-direction: column; gap: 10px; }
+  .kpi-group-title { font-size: 10px; font-weight: 600; letter-spacing: 1.5px; text-transform: uppercase; padding-bottom: 8px; border-bottom: 1px solid var(--border); }
+  .kpi-group-title.resto { color: var(--resto); }
+  .kpi-group-title.grocery { color: var(--grocery); }
+  .kpi-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+  .kpi-card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 16px; position: relative; overflow: hidden; min-width: 0; }
+  .kpi-card::after { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; border-radius: 12px 12px 0 0; }
+  .kpi-card.resto::after { background: var(--resto); }
+  .kpi-card.grocery::after { background: var(--grocery); }
+  .kpi-label { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; }
+  .kpi-value { font-family: 'Syne', sans-serif; font-size: clamp(18px, 1.9vw, 28px); font-weight: 800; color: var(--white); line-height: 1; }
+  .kpi-sub { font-size: 11px; color: var(--muted); margin-top: 6px; }
+  .kpi-delta { font-size: 11px; font-weight: 500; margin-top: 5px; color: #5bf09a; }
 
-/* W/W banner */
-.ww-box{background:#fff;border-radius:12px;padding:14px 16px;border:1px solid #e5e5e5;margin-bottom:12px;font-size:12px;line-height:1.7;}
-.ww-box strong{font-weight:700;}
-.ww-pills{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px;margin-top:10px;}
-.pill{border-radius:10px;padding:10px 12px;border:1px solid #e5e5e5;background:#fff;}
-.pill .plbl{font-size:10px;color:#888;font-weight:600;text-transform:uppercase;letter-spacing:.03em;}
-.pill .pval{font-size:17px;font-weight:700;margin:2px 0;}
-.pill .pdelta{font-size:11px;font-weight:700;}
+  .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  @media (max-width: 680px) { .two-col { grid-template-columns: 1fr; } }
 
-/* Notes */
-.notes-box{background:#fff;border-radius:12px;padding:14px 16px;border:1px solid #e5e5e5;font-size:12px;line-height:1.7;min-height:60px;white-space:pre-wrap;color:#1a1a1a;}
-.notes-ph{color:#bbb;font-style:italic;}
-.notes-edit{width:100%;min-height:100px;border:1px solid #ddd;border-radius:8px;padding:10px;font-size:12px;font-family:inherit;resize:vertical;line-height:1.7;margin-top:8px;}
+  .chart-card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 24px; }
+  .chart-title { font-size: 13px; font-weight: 600; color: var(--text); margin-bottom: 4px; }
+  .chart-note { font-size: 11px; color: var(--muted); margin-bottom: 20px; }
 
-/* Tables */
-.tcard{background:#fff;border-radius:12px;border:1px solid #e5e5e5;overflow:hidden;}
-.twrap{overflow-x:auto;}
-table{width:100%;border-collapse:collapse;font-size:11px;}
-th{text-align:left;padding:8px 10px;border-bottom:1px solid #e5e5e5;color:#888;font-weight:700;white-space:nowrap;background:#f9f9f9;font-size:10px;text-transform:uppercase;letter-spacing:.03em;}
-td{padding:7px 10px;border-bottom:1px solid #f0f0f0;vertical-align:middle;}
-tr:last-child td{border-bottom:none;}
-tr:hover td{background:#fafafa;}
-.badge{display:inline-block;padding:2px 8px;border-radius:999px;font-size:10px;font-weight:700;}
-.bok{background:#eaf3de;color:#3b6d11;}
-.bwarn{background:#faeeda;color:#854f0b;}
-.bfail{background:#fcebeb;color:#a32d2d;}
-.binfo{background:#e6f1fb;color:#185fa5;}
-.neg{color:#a32d2d;font-weight:600;}.pos{color:#3b6d11;font-weight:600;}
+  /* Horizontal bar chart */
+  .bar-chart { display: flex; flex-direction: column; gap: 5px; }
+  .bar-row { display: flex; align-items: center; gap: 8px; }
+  .bar-label { font-size: 11px; color: var(--muted); width: 28px; text-align: right; flex-shrink: 0; }
+  .bar-track { flex: 1; background: var(--bg); border-radius: 3px; height: 14px; overflow: hidden; }
+  .bar-fill { height: 100%; border-radius: 3px; }
+  .bar-val { font-size: 11px; color: var(--muted); width: 48px; flex-shrink: 0; text-align: right; }
 
-/* Charts */
-.cw{position:relative;width:100%;height:180px;margin-top:6px;}
+  /* DOW table */
+  .dow-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  .dow-table th { text-align: left; font-size: 10px; letter-spacing: 1.5px; text-transform: uppercase; color: var(--muted); padding: 0 0 12px 0; border-bottom: 1px solid var(--border); }
+  .dow-table td { padding: 9px 0; border-bottom: 1px solid rgba(42,47,66,0.5); vertical-align: middle; }
+  .dow-table tr:last-child td { border-bottom: none; }
+  .dow-badge { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 7px; vertical-align: middle; }
+  .highlight-row td { color: var(--white); font-weight: 500; }
 
-/* Empty */
-.empty{text-align:center;padding:60px 20px;}
-.empty h2{font-size:20px;font-weight:700;margin-bottom:10px;}
-.empty p{font-size:13px;color:#666;margin-bottom:24px;line-height:1.7;}
-.steps{text-align:left;display:inline-block;margin-bottom:24px;}
-.steps li{font-size:12px;margin-bottom:7px;list-style:none;display:flex;align-items:flex-start;gap:10px;}
-.snum{min-width:22px;height:22px;border-radius:50%;background:#1a1a1a;color:#fff;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;margin-top:1px;}
+  .legend { display: flex; gap: 20px; flex-wrap: wrap; margin-bottom: 16px; }
+  .legend-item { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--muted); }
+  .legend-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+  .legend-line { width: 18px; height: 2px; border-radius: 2px; flex-shrink: 0; }
 
-@media(max-width:700px){.grid4{grid-template-columns:1fr 1fr;}.grid2{grid-template-columns:1fr;}.tabs{padding:0 12px;}.page{padding:14px 12px;}}
+  .insights { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 14px; }
+  .insight { background: rgba(255,255,255,0.03); border: 1px solid var(--border); border-left: 3px solid var(--resto); border-radius: 8px; padding: 16px 18px; font-size: 13px; line-height: 1.6; color: var(--muted); }
+  .insight strong { color: var(--text); }
+  .insight.g { border-left-color: var(--grocery); }
+
+  .footer { margin-top: 60px; padding-top: 20px; border-top: 1px solid var(--border); font-size: 11px; color: var(--muted); text-align: center; }
 </style>
 </head>
 <body>
 
 <div class="header">
-  <div>
-    <h1>📊 CRM weekly performance</h1>
-    <p id="hdr-sub">No data loaded — click Update data to start</p>
-  </div>
-  <button class="btn btn-primary" onclick="openModal()">↑ Update data</button>
-</div>
-
-<!-- Modal -->
-<div class="overlay" id="modal">
-  <div class="modal">
-    <h2>Paste your Google Sheet data</h2>
-    <p class="modal-desc">Select a sheet tab below → open that tab in Google Sheets → <strong>Ctrl+A</strong> to select all → <strong>Ctrl+C</strong> to copy → <strong>Ctrl+V</strong> to paste below → click <strong>Save sheet</strong>. Repeat for each tab. Data never leaves your browser.</p>
-    <div class="stabs" id="stabs">
-      <button class="stab active" onclick="selS('overview',this)">Overview</button>
-      <button class="stab" onclick="selS('albEmail',this)">ALB Email</button>
-      <button class="stab" onclick="selS('albPush',this)">ALB Push</button>
-      <button class="stab" onclick="selS('xkxEmail',this)">XKX Email</button>
-      <button class="stab" onclick="selS('xkxPush',this)">XKX Push</button>
-      <button class="stab" onclick="selS('albInc',this)">ALB Inc.</button>
-      <button class="stab" onclick="selS('xkxInc',this)">XKX Inc.</button>
-    </div>
-    <textarea class="paste" id="parea" placeholder="Paste sheet data here (Ctrl+V)…"></textarea>
-    <p class="hint" id="parse-hint"></p>
-    <div class="mactions">
-      <button class="btn" onclick="closeModal()">Cancel</button>
-      <button class="btn" onclick="saveS()">Save sheet ✓</button>
-      <button class="btn btn-primary" onclick="go()">Render dashboard →</button>
-    </div>
+  <div class="container">
+    <div class="header-eyebrow">Order Volume Report</div>
+    <h1>ALB — Delivered Orders<span class="pill">Apr–May 2026</span></h1>
+    <div class="header-sub">Restaurant · Grocery — daily &amp; hourly breakdown · last two complete months</div>
   </div>
 </div>
 
-<!-- Empty state -->
-<div id="es" class="page empty">
-  <h2>Welcome to your CRM dashboard</h2>
-  <p>Paste your Google Sheets data weekly.<br>Everything runs locally — no data is ever uploaded anywhere.</p>
-  <ol class="steps">
-    <li><span class="snum">1</span><span>Click <strong>Update data</strong> (top right)</span></li>
-    <li><span class="snum">2</span><span>Select a sheet tab (start with <strong>Overview</strong>)</span></li>
-    <li><span class="snum">3</span><span>In Google Sheets: <strong>Ctrl+A</strong> → <strong>Ctrl+C</strong></span></li>
-    <li><span class="snum">4</span><span>Paste here → <strong>Save sheet</strong> · repeat for all tabs</span></li>
-    <li><span class="snum">5</span><span>Click <strong>Render dashboard</strong></span></li>
-  </ol>
-  <button class="btn btn-primary" onclick="openModal()" style="font-size:13px;padding:10px 24px;">Get started →</button>
-</div>
+<div class="container">
 
-<!-- Dashboard -->
-<div id="dash" style="display:none;">
-  <div class="tabs" style="background:#fff;">
-    <button class="tab active" onclick="swT('one',this)">One pager</button>
-    <button class="tab" onclick="swT('alb',this)">ALB campaigns</button>
-    <button class="tab" onclick="swT('xkx',this)">XKX campaigns</button>
-    <button class="tab" onclick="swT('inc',this)">Incrementality</button>
-  </div>
-
-  <!-- ONE PAGER -->
-  <div id="tp-one" class="tp active page">
-
-    <!-- W/W Summary -->
-    <div class="section" id="ww-sec" style="display:none;">
-      <div class="sh"><span class="stag">w/w</span><span class="stitle">Week-over-week summary</span></div>
-      <div id="ww-box" class="ww-box"></div>
-      <div class="ww-pills" id="ww-pills"></div>
-    </div>
-
-    <!-- Notes -->
-    <div class="section">
-      <div class="sh">
-        <span class="stag">notes</span>
-        <span class="stitle">Weekly notes</span>
-        <button class="btn" id="nbtn" onclick="toggleN()" style="margin-left:auto;font-size:11px;padding:4px 12px;">✏️ Edit</button>
+  <!-- KPIs -->
+  <div class="section">
+    <div class="section-label">Overall Volume — Apr 1 to May 31, 2026</div>
+    <div class="kpi-wrapper">
+      <!-- Restaurant group -->
+      <div class="kpi-group">
+        <div class="kpi-group-title resto">Restaurant</div>
+        <div class="kpi-row">
+          <div class="kpi-card resto">
+            <div class="kpi-label">Total</div>
+            <div class="kpi-value">837,612</div>
+            <div class="kpi-sub">~13,731 / day</div>
+            <div class="kpi-delta">↑ +4.0% MoM</div>
+          </div>
+          <div class="kpi-card resto">
+            <div class="kpi-label">April</div>
+            <div class="kpi-value">410,678</div>
+            <div class="kpi-sub">~13,689 / day</div>
+          </div>
+          <div class="kpi-card resto">
+            <div class="kpi-label">May</div>
+            <div class="kpi-value">426,934</div>
+            <div class="kpi-sub">~13,772 / day</div>
+          </div>
+        </div>
       </div>
-      <div id="nview" class="notes-box"><span class="notes-ph" id="nph">No notes yet — click Edit to add highlights, challenges or next steps for this week.</span><span id="nct" style="display:none;"></span></div>
-      <div id="nedit" style="display:none;">
-        <textarea class="notes-edit" id="ninput" placeholder="Key highlights this week...&#10;Challenges / blockers...&#10;Next steps...&#10;Escalations..."></textarea>
-        <div style="display:flex;gap:6px;margin-top:6px;justify-content:flex-end;">
-          <button class="btn" onclick="cancelN()">Cancel</button>
-          <button class="btn btn-primary" onclick="saveN()">Save notes</button>
+      <!-- Grocery group -->
+      <div class="kpi-group">
+        <div class="kpi-group-title grocery">Grocery</div>
+        <div class="kpi-row">
+          <div class="kpi-card grocery">
+            <div class="kpi-label">Total</div>
+            <div class="kpi-value">31,284</div>
+            <div class="kpi-sub">~513 / day</div>
+            <div class="kpi-delta">↑ +17.2% MoM</div>
+          </div>
+          <div class="kpi-card grocery">
+            <div class="kpi-label">April</div>
+            <div class="kpi-value">14,402</div>
+            <div class="kpi-sub">~480 / day</div>
+          </div>
+          <div class="kpi-card grocery">
+            <div class="kpi-label">May</div>
+            <div class="kpi-value">16,882</div>
+            <div class="kpi-sub">~545 / day</div>
+          </div>
         </div>
       </div>
     </div>
+  </div>
 
-    <!-- ALB KPIs -->
-    <div class="section">
-      <div class="sh"><span class="stag">ALB</span><span class="stitle">Albania — latest week</span></div>
-      <div class="sublbl">Email</div>
-      <div class="grid4" id="alb-ekpis"></div>
-      <div class="sublbl">Push</div>
-      <div class="grid4" id="alb-pkpis"></div>
+  <!-- Daily trend -->
+  <div class="section">
+    <div class="section-label">Daily Order Volume — Apr 1 to May 31</div>
+    <div class="chart-card">
+      <div class="chart-title">Restaurant daily orders</div>
+      <div class="chart-note">Apr avg 13,689 · May avg 13,772 · peak 15,756 (Apr 2) · low 11,112 (May 27)</div>
+      <div class="legend"><div class="legend-item"><div class="legend-line" style="background:var(--resto)"></div>Restaurant</div></div>
+      <canvas id="resto-daily-chart" height="90"></canvas>
     </div>
-
-    <!-- XKX KPIs -->
-    <div class="section">
-      <div class="sh"><span class="stag">XKX</span><span class="stitle">Kosovo — latest week</span></div>
-      <div class="sublbl">Email</div>
-      <div class="grid4" id="xkx-ekpis"></div>
-      <div class="sublbl">Push</div>
-      <div class="grid4" id="xkx-pkpis"></div>
+    <div style="margin-top:16px;" class="chart-card">
+      <div class="chart-title">Grocery daily orders</div>
+      <div class="chart-note">Apr avg 480 · May avg 545 · clear upward trend · peak 648 (May 16) · low 406 (Apr 28)</div>
+      <div class="legend"><div class="legend-item"><div class="legend-line" style="background:var(--grocery)"></div>Grocery</div></div>
+      <canvas id="groc-daily-chart" height="90"></canvas>
     </div>
+  </div>
 
-    <!-- Trend charts -->
-    <div class="section">
-      <div class="sh"><span class="stag">trend</span><span class="stitle">8-week email trends</span></div>
-      <div class="grid2">
-        <div class="kcard"><div class="lbl">ALB — emails sent</div><div class="cw"><canvas id="cAV" role="img" aria-label="ALB volume trend">ALB volume.</canvas></div></div>
-        <div class="kcard"><div class="lbl">XKX — emails sent</div><div class="cw"><canvas id="cXV" role="img" aria-label="XKX volume trend">XKX volume.</canvas></div></div>
+  <!-- Hourly avg -->
+  <div class="section">
+    <div class="section-label">Average Orders by Hour of Day</div>
+    <div class="two-col">
+      <div class="chart-card">
+        <div class="chart-title">Restaurant</div>
+        <div class="chart-note">Peak: 21h (1,395 avg) · lunch peak 13h–14h (~1,098) · low at 6h (6 avg)</div>
+        <div class="bar-chart" id="resto-bars"></div>
       </div>
-      <div class="grid2" style="margin-top:12px;">
-        <div class="kcard"><div class="lbl">ALB — open rate %</div><div class="cw"><canvas id="cAR" role="img" aria-label="ALB OR trend">ALB OR.</canvas></div></div>
-        <div class="kcard"><div class="lbl">XKX — open rate %</div><div class="cw"><canvas id="cXR" role="img" aria-label="XKX OR trend">XKX OR.</canvas></div></div>
-      </div>
-    </div>
-  </div>
-
-  <!-- ALB CAMPAIGNS -->
-  <div id="tp-alb" class="tp page">
-    <div class="section">
-      <div class="sh"><span class="stag">email</span><span class="stitle">ALB email campaigns</span></div>
-      <div class="tcard"><div class="twrap"><table><thead><tr><th style="min-width:200px;">Campaign</th><th>Sent</th><th>Open %</th><th>CTOR</th><th>Purchases</th><th>Revenue</th><th>Unsub %</th></tr></thead><tbody id="tAE"></tbody></table></div></div>
-    </div>
-    <div class="section">
-      <div class="sh"><span class="stag">push</span><span class="stitle">ALB push campaigns</span></div>
-      <div class="tcard"><div class="twrap"><table><thead><tr><th style="min-width:200px;">Campaign</th><th>Sent</th><th>Open %</th><th>Purchases</th><th>Revenue</th><th>Conv %</th></tr></thead><tbody id="tAP"></tbody></table></div></div>
-    </div>
-  </div>
-
-  <!-- XKX CAMPAIGNS -->
-  <div id="tp-xkx" class="tp page">
-    <div class="section">
-      <div class="sh"><span class="stag">email</span><span class="stitle">XKX email campaigns</span></div>
-      <div class="tcard"><div class="twrap"><table><thead><tr><th style="min-width:200px;">Campaign</th><th>Sent</th><th>Open %</th><th>CTOR</th><th>Purchases</th><th>Revenue</th><th>Unsub %</th></tr></thead><tbody id="tXE"></tbody></table></div></div>
-    </div>
-    <div class="section">
-      <div class="sh"><span class="stag">push</span><span class="stitle">XKX push campaigns</span></div>
-      <div class="tcard"><div class="twrap"><table><thead><tr><th style="min-width:200px;">Campaign</th><th>Sent</th><th>Open %</th><th>Purchases</th><th>Revenue</th><th>Conv %</th></tr></thead><tbody id="tXP"></tbody></table></div></div>
-    </div>
-  </div>
-
-  <!-- INCREMENTALITY -->
-  <div id="tp-inc" class="tp page">
-
-    <!-- Explainer -->
-    <div class="section">
-      <div class="sh"><span class="stag">guide</span><span class="stitle">How to read incrementality results</span></div>
-      <div style="background:#fff;border-radius:12px;border:1px solid #e5e5e5;padding:16px 20px;">
-        <p style="font-size:12px;color:#444;line-height:1.8;margin-bottom:14px;">
-          Incrementality measures whether a CRM campaign <strong>caused</strong> additional orders, GOV and users — or whether those customers would have purchased anyway without the campaign. We compare a <strong>treatment group</strong> (received the campaign) vs a <strong>control group</strong> (did not). A positive result means the campaign drove real uplift. A negative result means the control group outperformed — the campaign may have disrupted natural behaviour.
-        </p>
-        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px;">
-          <div style="border-radius:10px;padding:12px 14px;background:#eaf3de;border-left:4px solid #3b6d11;">
-            <div style="font-size:12px;font-weight:700;color:#3b6d11;margin-bottom:4px;">✅ Positive</div>
-            <div style="font-size:11px;color:#2a4a0f;line-height:1.6;">Inc. GOV &gt; €1,000. The campaign drove real additional orders and revenue beyond what would have happened organically. <strong>Scale or repeat.</strong></div>
-          </div>
-          <div style="border-radius:10px;padding:12px 14px;background:#faeeda;border-left:4px solid #854f0b;">
-            <div style="font-size:12px;font-weight:700;color:#854f0b;margin-bottom:4px;">⚠️ Mixed</div>
-            <div style="font-size:11px;color:#5a3508;line-height:1.6;">Inc. GOV between -€1,000 and +€1,000, or conflicting signals (e.g. positive orders but negative GOV). Inconclusive — <strong>monitor closely before scaling.</strong></div>
-          </div>
-          <div style="border-radius:10px;padding:12px 14px;background:#fcebeb;border-left:4px solid #a32d2d;">
-            <div style="font-size:12px;font-weight:700;color:#a32d2d;margin-bottom:4px;">❌ Negative</div>
-            <div style="font-size:11px;color:#6b1a1a;line-height:1.6;">Inc. GOV &lt; -€1,000. Control group outperformed treatment — the campaign likely <strong>cannibalised</strong> organic orders or caused audience fatigue. Pause and investigate.</div>
-          </div>
-        </div>
-        <div style="margin-top:12px;padding-top:12px;border-top:1px solid #f0f0f0;">
-          <p style="font-size:11px;color:#444;line-height:1.7;margin-bottom:8px;"><strong>Measurement windows</strong> — all measured from campaign start date:</p>
-          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:8px;">
-            <div style="background:#f9f9f9;border-radius:8px;padding:10px 12px;">
-              <div style="font-size:11px;font-weight:700;color:#1a1a1a;margin-bottom:3px;">1. In Campaign</div>
-              <div style="font-size:11px;color:#666;line-height:1.6;">Impact measured while the campaign is still actively running.</div>
-            </div>
-            <div style="background:#f9f9f9;border-radius:8px;padding:10px 12px;">
-              <div style="font-size:11px;font-weight:700;color:#1a1a1a;margin-bottom:3px;">2. Post 7 days</div>
-              <div style="font-size:11px;color:#666;line-height:1.6;">Early signal — incremental impact within the first 7 days from campaign start.</div>
-            </div>
-            <div style="background:#f9f9f9;border-radius:8px;padding:10px 12px;">
-              <div style="font-size:11px;font-weight:700;color:#1a1a1a;margin-bottom:3px;">3. Post 28 days</div>
-              <div style="font-size:11px;color:#666;line-height:1.6;">Medium-term read — incremental impact within 28 days. Typically the primary evaluation window.</div>
-            </div>
-            <div style="background:#f9f9f9;border-radius:8px;padding:10px 12px;">
-              <div style="font-size:11px;font-weight:700;color:#1a1a1a;margin-bottom:3px;">4. Post 56 days</div>
-              <div style="font-size:11px;color:#666;line-height:1.6;">Longer-term view — checks whether early lift was sustained or if cannibalisation emerged over time.</div>
-            </div>
-          </div>
-          <p style="font-size:11px;color:#888;line-height:1.7;margin-top:10px;">⚠️ <strong>Note:</strong> There is no fixed GOV threshold to define pass/fail. Results should be read in context — compare windows across the same campaign and benchmark against similar past campaigns. A campaign positive at 28d but negative at 56d warrants further investigation.</p>
-        </div>
+      <div class="chart-card">
+        <div class="chart-title">Grocery</div>
+        <div class="chart-note">Peak: 20h (49 avg) · gradual ramp from midday · low at 7h (2 avg)</div>
+        <div class="bar-chart" id="grocery-bars"></div>
       </div>
     </div>
+  </div>
 
-    <div class="section">
-      <div class="sh"><span class="stag">ALB</span><span class="stitle">Albania incrementality</span></div>
-      <div class="tcard"><div class="twrap"><table><thead><tr><th style="min-width:200px;">Program</th><th>Period</th><th>Exposed</th><th>Inc. orders</th><th>Inc. GOV</th><th>Inc. users</th><th>Result</th></tr></thead><tbody id="tAI"></tbody></table></div></div>
-    </div>
-    <div class="section">
-      <div class="sh"><span class="stag">XKX</span><span class="stitle">Kosovo incrementality</span></div>
-      <div class="tcard"><div class="twrap"><table><thead><tr><th style="min-width:200px;">Program</th><th>Period</th><th>Exposed</th><th>Inc. orders</th><th>Inc. GOV</th><th>Inc. users</th><th>Result</th></tr></thead><tbody id="tXI"></tbody></table></div></div>
-    </div>
-    <div class="section">
-      <div class="sh"><span class="stag">viz</span><span class="stitle">Incremental GOV by program</span></div>
-      <div class="kcard"><div style="position:relative;height:260px;"><canvas id="cInc" role="img" aria-label="Inc GOV chart">Inc GOV.</canvas></div></div>
+  <!-- Combined hourly stacked -->
+  <div class="section">
+    <div class="section-label">Restaurant vs Grocery — Total Orders by Hour of Day (full period)</div>
+    <div class="chart-card">
+      <div class="chart-title">Cumulative orders per hour · Apr 1 – May 31</div>
+      <div class="chart-note">Restaurant: 837,612 total · Grocery: 31,284 total · Grocery proportionally stronger 15h–19h</div>
+      <div class="legend">
+        <div class="legend-item"><div class="legend-dot" style="background:var(--resto)"></div>Restaurant</div>
+        <div class="legend-item"><div class="legend-dot" style="background:var(--grocery)"></div>Grocery</div>
+      </div>
+      <div id="rv-bars" class="bar-chart"></div>
     </div>
   </div>
+
+  <!-- DOW -->
+  <div class="section">
+    <div class="section-label">Day-of-Week Patterns (avg daily orders)</div>
+    <div class="two-col">
+      <div class="chart-card">
+        <div class="chart-title">Restaurant</div>
+        <div class="chart-note">Fri highest (14,552) · Sun lowest (12,787) · 14% gap</div>
+        <table class="dow-table" id="resto-dow"></table>
+      </div>
+      <div class="chart-card">
+        <div class="chart-title">Grocery</div>
+        <div class="chart-note">Sat highest (553) · Tue lowest (486) · 14% gap</div>
+        <table class="dow-table" id="groc-dow"></table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Insights -->
+  <div class="section">
+    <div class="section-label">Key Takeaways</div>
+    <div class="insights">
+      <div class="insight">
+        <strong>Restaurant peak: 21h (1,395 avg orders).</strong> Followed by 22h (1,214) and 20h (1,144). A clear secondary lunch peak runs 13h–14h (~1,098/hr). The valley sits at 6h with just 6 orders.
+      </div>
+      <div class="insight g">
+        <strong>Grocery grew +17.2% month-over-month</strong> — 14,402 in April to 16,882 in May — far outpacing restaurant (+4.0%). The second half of May consistently exceeded 550 orders/day; peak was 648 on May 16.
+      </div>
+      <div class="insight">
+        <strong>Friday is the strongest restaurant day</strong> (14,552 avg), Thursday second (14,408). Sunday is the weakest at 12,787 — a 14% gap between best and worst day.
+      </div>
+      <div class="insight g">
+        <strong>Grocery peak is at 20h (49 avg/hr)</strong>, mirroring the restaurant evening pattern but at ~28× smaller scale. Grocery holds a proportionally higher share of combined volume in the 15h–19h afternoon window.
+      </div>
+      <div class="insight g">
+        <strong>Saturday leads for grocery</strong> (553 avg), Sunday second (543). Tuesday is lowest at 486 — a 14% gap. Weekend uplift is consistent across both months.
+      </div>
+      <div class="insight">
+        <strong>Late-night restaurant volume is sustained</strong> — 493 avg orders at 0h, 311 at 1h. The overnight window (23h–1h) represents a meaningful and stable demand slot worth covering.
+      </div>
+    </div>
+  </div>
+
+  <div class="footer">ALB Order Volume · Source: ALB_volume_orders_v2.xlsx · Apr 1 – May 31, 2026 · Restaurant &amp; Grocery · Generated Jun 2026</div>
 </div>
 
 <script>
-// ---- State ----
-const S={overview:'',albEmail:'',albPush:'',xkxEmail:'',xkxPush:'',albInc:'',xkxInc:''};
-const LABELS={overview:'Overview',albEmail:'ALB Email',albPush:'ALB Push',xkxEmail:'XKX Email',xkxPush:'XKX Push',albInc:'ALB Inc.',xkxInc:'XKX Inc.'};
-let cur='overview', CH={}, savedNotes='';
+// ── DATA (derived directly from ALB_volume_orders_v2.xlsx) ────────────────
 
-// ---- Modal ----
-function openModal(){document.getElementById('modal').classList.add('open');document.getElementById('parea').value=S[cur]||'';updHint();}
-function closeModal(){document.getElementById('modal').classList.remove('open');}
-function selS(id,btn){
-  saveS();cur=id;
-  document.querySelectorAll('.stab').forEach(t=>{t.classList.remove('active');});
-  btn.classList.add('active');
-  document.getElementById('parea').value=S[id]||'';
-  updHint();
-}
-function saveS(){
-  const v=document.getElementById('parea').value.trim();
-  if(v){
-    S[cur]=v;
-    // Mark tab as done
-    document.querySelectorAll('.stab').forEach(t=>{
-      const key=t.getAttribute('onclick').match(/'(\w+)'/)?.[1];
-      if(key===cur&&v) t.classList.add('done');
-    });
-  }
-  updHint();
-}
-function updHint(){
-  const filled=Object.keys(S).filter(k=>S[k].length>0);
-  document.getElementById('parse-hint').textContent=filled.length?`✓ Saved: ${filled.map(k=>LABELS[k]).join(', ')}`:'No sheets saved yet.';
-}
+const GROC_DAILY = [['Apr 1',503],['Apr 2',495],['Apr 3',453],['Apr 4',516],['Apr 5',443],['Apr 6',504],['Apr 7',442],['Apr 8',449],['Apr 9',426],['Apr 10',465],['Apr 11',524],['Apr 12',505],['Apr 13',537],['Apr 14',449],['Apr 15',520],['Apr 16',475],['Apr 17',470],['Apr 18',575],['Apr 19',481],['Apr 20',485],['Apr 21',500],['Apr 22',497],['Apr 23',414],['Apr 24',465],['Apr 25',471],['Apr 26',522],['Apr 27',453],['Apr 28',406],['Apr 29',440],['Apr 30',517],['May 1',526],['May 2',507],['May 3',552],['May 4',492],['May 5',451],['May 6',488],['May 7',482],['May 8',498],['May 9',608],['May 10',610],['May 11',547],['May 12',500],['May 13',549],['May 14',511],['May 15',566],['May 16',648],['May 17',586],['May 18',499],['May 19',575],['May 20',503],['May 21',559],['May 22',513],['May 23',575],['May 24',598],['May 25',564],['May 26',566],['May 27',593],['May 28',523],['May 29',548],['May 30',553],['May 31',592]];
 
-// ---- Notes ----
-function toggleN(){
-  const ed=document.getElementById('nedit'),v=document.getElementById('nview'),b=document.getElementById('nbtn');
-  if(ed.style.display==='none'||!ed.style.display){document.getElementById('ninput').value=savedNotes;ed.style.display='block';v.style.display='none';b.textContent='Cancel';}
-  else cancelN();
-}
-function cancelN(){document.getElementById('nedit').style.display='none';document.getElementById('nview').style.display='block';document.getElementById('nbtn').textContent='✏️ Edit';}
-function saveN(){
-  savedNotes=document.getElementById('ninput').value.trim();
-  const ph=document.getElementById('nph'),ct=document.getElementById('nct');
-  if(savedNotes){ph.style.display='none';ct.style.display='';ct.textContent=savedNotes;}
-  else{ph.style.display='';ct.style.display='none';}
-  cancelN();
-}
+const RESTO_DAILY = [['Apr 1',14470],['Apr 2',15756],['Apr 3',15143],['Apr 4',13341],['Apr 5',12384],['Apr 6',13009],['Apr 7',14237],['Apr 8',13937],['Apr 9',14279],['Apr 10',14913],['Apr 11',13445],['Apr 12',12080],['Apr 13',13134],['Apr 14',13574],['Apr 15',14005],['Apr 16',14262],['Apr 17',14382],['Apr 18',14927],['Apr 19',12611],['Apr 20',13289],['Apr 21',14282],['Apr 22',13679],['Apr 23',13370],['Apr 24',14201],['Apr 25',12793],['Apr 26',12348],['Apr 27',12984],['Apr 28',11461],['Apr 29',13516],['Apr 30',14866],['May 1',12942],['May 2',12302],['May 3',12647],['May 4',13251],['May 5',13789],['May 6',14373],['May 7',14514],['May 8',15649],['May 9',14125],['May 10',13681],['May 11',13281],['May 12',13897],['May 13',14608],['May 14',14303],['May 15',14931],['May 16',15129],['May 17',13398],['May 18',13393],['May 19',14302],['May 20',14274],['May 21',14653],['May 22',14754],['May 23',13660],['May 24',13314],['May 25',13606],['May 26',13793],['May 27',11112],['May 28',13666],['May 29',14057],['May 30',12907],['May 31',12623]];
 
-// ---- Parsers ----
-function parseTSV(raw){
-  if(!raw||!raw.trim()) return [];
-  return raw.trim().split(/\r?\n/).map(r=>r.split('\t').map(c=>c.replace(/^["']|["']$/g,'').trim()));
-}
+// Hourly averages (avg orders per hour across all days)
+const restoHourly = {0:492.62,1:310.92,2:174.67,3:87.57,4:39.03,5:16.52,6:6.41,7:7.41,8:27.07,9:77.0,10:182.57,11:415.23,12:886.84,13:1095.34,14:1101.57,15:966.57,16:854.89,17:780.1,18:779.74,19:862.77,20:1143.51,21:1394.95,22:1214.33,23:813.7};
+const grocHourly = {0:21.15,1:14.64,2:9.79,3:7.12,4:4.52,5:2.45,6:2.0,7:1.78,8:3.35,9:9.0,10:15.75,11:17.87,12:23.05,13:26.39,14:28.08,15:28.69,16:29.62,17:32.03,18:35.56,19:40.38,20:48.98,21:47.75,22:38.39,23:26.82};
 
-function cleanNum(s){
-  if(!s) return null;
-  const c=s.toString().replace(/[€$£%,\s"]/g,'').trim();
-  if(!c||c==='-'||c==='N/A'||c==='#VALUE!'||c==='TBC'||c==='') return null;
-  const n=parseFloat(c);
-  return isNaN(n)?null:n;
-}
-function cleanPct(s){
-  if(!s) return null;
-  const v=parseFloat(s.toString().replace('%','').trim());
-  return isNaN(v)?null:v;
-}
-function fmtN(v,d=0){if(v===null||v===undefined)return'—';return Number(v).toLocaleString('en',{minimumFractionDigits:d,maximumFractionDigits:d});}
-function fmtP(v){return v===null?'—':v.toFixed(2)+'%';}
-function sn(s,m=42){return s&&s.length>m?s.slice(0,m-1)+'…':s||'—';}
+// Hourly sums (total orders per hour across full period)
+const restoHsum = {0:30050,1:18966,2:10655,3:5342,4:2381,5:1008,6:391,7:452,8:1651,9:4697,10:11137,11:25329,12:54097,13:66816,14:67196,15:58961,16:52148,17:47586,18:47564,19:52629,20:69754,21:85092,22:74074,23:49636};
+const grocHsum = {0:1290,1:893,2:597,3:427,4:271,5:120,6:88,7:66,8:181,9:549,10:961,11:1090,12:1406,13:1610,14:1713,15:1750,16:1807,17:1954,18:2169,19:2463,20:2988,21:2913,22:2342,23:1636};
 
-// Parse Overview sheet - find ALB and XKX blocks
-function parseOverview(){
-  const rows=parseTSV(S.overview);
-  if(!rows.length) return null;
+// Day-of-week averages
+const restoDow = {Friday:14552,Thursday:14408,Wednesday:13775,Tuesday:13667,Saturday:13625,Monday:13243,Sunday:12787};
+const grocDow = {Saturday:553,Sunday:543,Wednesday:505,Monday:510,Friday:500,Thursday:489,Tuesday:486};
 
-  // Find ALB and XKX section start indices
-  let albIdx=-1,xkxIdx=-1;
-  for(let i=0;i<rows.length;i++){
-    const r=rows[i].join(' ');
-    if(r.includes('ALB LM KPIs')&&albIdx<0) albIdx=i;
-    if(r.includes('XKX LM KPIs')&&xkxIdx<0) xkxIdx=i;
-  }
+// ── LINE CHART ────────────────────────────────────────────────────────────
+function drawLineChart(canvasId, data, hexColor) {
+  const canvas = document.getElementById(canvasId);
+  const dpr = window.devicePixelRatio || 1;
+  const W = canvas.parentElement.offsetWidth;
+  const H = parseInt(canvas.getAttribute('height'));
+  canvas.width = W * dpr;
+  canvas.height = H * dpr;
+  canvas.style.width = W + 'px';
+  canvas.style.height = H + 'px';
+  const ctx = canvas.getContext('2d');
+  ctx.scale(dpr, dpr);
 
-  // Find weeks row (OKR row) — get date columns only (skip w/w last col)
-  let wksRow=[];
-  for(let i=0;i<rows.length;i++){
-    if(rows[i].join(' ').includes('OKR')){
-      // Weeks are values that look like dates e.g. "13-Apr", "4-May"
-      wksRow=rows[i].filter(w=>w&&/\d+[-\/]\w+|\w+[-\/]\d+/.test(w));
-      break;
-    }
-  }
+  const vals = data.map(d => d[1]);
+  const labels = data.map(d => d[0]);
+  const n = data.length;
+  const minV = Math.min(...vals) * 0.93;
+  const maxV = Math.max(...vals) * 1.04;
+  const padL = 6, padR = 6, padT = 16, padB = 20;
+  const cW = W - padL - padR;
+  const cH = H - padT - padB;
 
-  // Get metric row values — skip label cols, skip last w/w col
-  // The sheet structure: col0=empty, col1=metric name, col2..N=weekly values, colLast=w/w%
-  const getMetric=(startIdx,endIdx,keyword)=>{
-    const end=endIdx>0?Math.min(endIdx,rows.length):Math.min(startIdx+25,rows.length);
-    for(let i=startIdx;i<end;i++){
-      // Find the label column (col1 or col0)
-      const labelCol=rows[i].findIndex(c=>c.toLowerCase().includes(keyword.toLowerCase()));
-      if(labelCol>=0){
-        // Values start after the label, exclude last element (w/w)
-        const vals=rows[i].slice(labelCol+1);
-        // Remove last element if it looks like a w/w % (e.g. "20%", "-11%")
-        const cleanVals=vals[vals.length-1]&&/^[-+]?\d+%$/.test(vals[vals.length-1].trim())?vals.slice(0,-1):vals;
-        // Append w/w as last for delta display
-        const ww=vals[vals.length-1]&&/^[-+]?\d+%$/.test(vals[vals.length-1].trim())?vals[vals.length-1]:null;
-        return{vals:cleanVals.filter(v=>v!==''),ww};
-      }
-    }
-    return{vals:[],ww:null};
-  };
+  const xp = i => padL + (i / (n - 1)) * cW;
+  const yp = v => padT + cH - ((v - minV) / (maxV - minV)) * cH;
 
-  const mk=(si,ei)=>({
-    eS:getMetric(si,ei,'Emails sent'),
-    eOR:getMetric(si,ei,'Email OR'),
-    eCTOR:getMetric(si,ei,'Email CTOR'),
-    eCTC:getMetric(si,ei,'Email CTC'),
-    unsub:getMetric(si,ei,'Unsubscribe rate'),
-    pS:getMetric(si,ei,'Push sent'),
-    pOR:getMetric(si,ei,'Push OR'),
-    pCTC:getMetric(si,ei,'Push CTC'),
-    aud:getMetric(si,ei,'Addressable'),
+  // Gridlines
+  ctx.strokeStyle = 'rgba(42,47,66,0.9)';
+  ctx.lineWidth = 1;
+  [0, 1, 2, 3].forEach(i => {
+    const y = padT + (i / 3) * cH;
+    ctx.beginPath(); ctx.moveTo(padL, y); ctx.lineTo(W - padR, y); ctx.stroke();
   });
 
-  return{weeks:wksRow, alb:mk(albIdx,xkxIdx), xkx:mk(xkxIdx,rows.length)};
+  // Month divider at index 29 (end of April)
+  const divX = xp(29);
+  ctx.strokeStyle = 'rgba(122,128,160,0.4)';
+  ctx.setLineDash([4, 4]);
+  ctx.beginPath(); ctx.moveTo(divX, padT); ctx.lineTo(divX, padT + cH); ctx.stroke();
+  ctx.setLineDash([]);
+
+  // Month labels
+  ctx.fillStyle = 'rgba(122,128,160,0.75)';
+  ctx.font = '10px Inter, sans-serif';
+  ctx.textAlign = 'center';
+  ctx.fillText('April', xp(14), H - 4);
+  ctx.fillText('May', xp(44), H - 4);
+
+  // Area fill
+  const grad = ctx.createLinearGradient(0, padT, 0, padT + cH);
+  grad.addColorStop(0, hexColor + '35');
+  grad.addColorStop(1, hexColor + '00');
+  ctx.beginPath();
+  ctx.moveTo(xp(0), yp(vals[0]));
+  for (let i = 1; i < n; i++) ctx.lineTo(xp(i), yp(vals[i]));
+  ctx.lineTo(xp(n - 1), padT + cH);
+  ctx.lineTo(xp(0), padT + cH);
+  ctx.closePath();
+  ctx.fillStyle = grad;
+  ctx.fill();
+
+  // Line
+  ctx.beginPath();
+  ctx.moveTo(xp(0), yp(vals[0]));
+  for (let i = 1; i < n; i++) ctx.lineTo(xp(i), yp(vals[i]));
+  ctx.strokeStyle = hexColor;
+  ctx.lineWidth = 2;
+  ctx.lineJoin = 'round';
+  ctx.stroke();
+
+  // Max label
+  const maxIdx = vals.indexOf(Math.max(...vals));
+  ctx.fillStyle = hexColor;
+  ctx.font = 'bold 10px Inter, sans-serif';
+  ctx.textAlign = 'center';
+  ctx.fillText(vals[maxIdx].toLocaleString(), xp(maxIdx), yp(vals[maxIdx]) - 5);
+
+  // Min label
+  const minIdx = vals.indexOf(Math.min(...vals));
+  ctx.fillStyle = 'rgba(122,128,160,0.85)';
+  ctx.font = '10px Inter, sans-serif';
+  ctx.fillText(vals[minIdx].toLocaleString(), xp(minIdx), yp(vals[minIdx]) + 13);
 }
 
-// Get last valid value from array
-function lastVal(m){
-  if(!m) return null;
-  const arr=m.vals||m;
-  for(let i=arr.length-1;i>=0;i--){
-    const v=arr[i];
-    if(v&&v!==''&&v!=='N/A'&&v!=='#VALUE!'&&v!=='w/w') return v;
+// ── HOURLY BAR CHART ──────────────────────────────────────────────────────
+function hourLabel(h) {
+  if (h === 0) return '12a';
+  if (h < 12) return h + 'a';
+  if (h === 12) return '12p';
+  return (h - 12) + 'p';
+}
+
+function renderHourlyBars(id, data, color) {
+  const el = document.getElementById(id);
+  const max = Math.max(...Object.values(data));
+  for (let h = 0; h < 24; h++) {
+    const v = data[h] || 0;
+    const pct = (v / max * 100).toFixed(1);
+    const op = (0.35 + 0.65 * (v / max)).toFixed(2);
+    const row = document.createElement('div');
+    row.className = 'bar-row';
+    row.innerHTML = `<span class="bar-label">${hourLabel(h)}</span><div class="bar-track"><div class="bar-fill" style="width:${pct}%;background:${color};opacity:${op};"></div></div><span class="bar-val">${v >= 1000 ? (v/1000).toFixed(1)+'k' : Math.round(v)}</span>`;
+    el.appendChild(row);
   }
-  return null;
-}
-// Get w/w delta
-function wwDelta(m){
-  if(!m) return null;
-  const ww=m.ww;
-  if(!ww) return null;
-  const n=parseFloat(ww.replace('%',''));
-  return isNaN(n)?null:n;
 }
 
-function kCard(lbl,val,delta){
-  let dhtml='';
-  if(delta!==null){
-    const cls=delta>0?'up':delta<0?'down':'neu';
-    const sign=delta>0?'▲ ':'▼ ';
-    dhtml=`<div class="delta ${cls}">${sign}${Math.abs(delta).toFixed(0)}% w/w</div>`;
+function renderRVBars(id, d1, d2) {
+  const el = document.getElementById(id);
+  const maxTotal = Math.max(...Array.from({length:24}, (_,h) => (d1[h]||0)+(d2[h]||0)));
+  for (let h = 0; h < 24; h++) {
+    const v1 = d1[h]||0, v2 = d2[h]||0;
+    const p1 = (v1 / maxTotal * 100).toFixed(2);
+    const p2 = (v2 / maxTotal * 100).toFixed(2);
+    const row = document.createElement('div');
+    row.className = 'bar-row';
+    row.innerHTML = `
+      <span class="bar-label">${hourLabel(h)}</span>
+      <div class="bar-track" style="display:flex;overflow:hidden;">
+        <div style="width:${p1}%;background:var(--resto);height:100%;opacity:0.85;"></div>
+        <div style="width:${p2}%;background:var(--grocery);height:100%;opacity:0.85;"></div>
+      </div>
+      <span class="bar-val" style="width:120px;">${v1.toLocaleString()} <span style="color:var(--grocery)">+${v2.toLocaleString()}</span></span>`;
+    el.appendChild(row);
   }
-  return`<div class="kcard"><div class="lbl">${lbl}</div><div class="val">${(val||'—').toString().replace(/"/g,'')}</div>${dhtml}</div>`;
 }
 
-function renderKPIs(d,ePfx,pPfx){
-  document.getElementById(ePfx).innerHTML=[
-    kCard('Emails sent',lastVal(d.eS),wwDelta(d.eS)),
-    kCard('Open rate',lastVal(d.eOR),wwDelta(d.eOR)),
-    kCard('CTOR',lastVal(d.eCTOR),wwDelta(d.eCTOR)),
-    kCard('Email CTC',lastVal(d.eCTC),wwDelta(d.eCTC)),
-  ].join('');
-  document.getElementById(pPfx).innerHTML=[
-    kCard('Push sent',lastVal(d.pS),wwDelta(d.pS)),
-    kCard('Push OR',lastVal(d.pOR),wwDelta(d.pOR)),
-    kCard('Push CTC',lastVal(d.pCTC),wwDelta(d.pCTC)),
-    kCard('Addressable',lastVal(d.aud),wwDelta(d.aud)),
-  ].join('');
-}
-
-function buildWW(ov){
-  const sec=document.getElementById('ww-sec');
-  const metrics=[
-    {lbl:'ALB emails sent',m:ov.alb.eS,fmt:'n'},
-    {lbl:'ALB open rate',m:ov.alb.eOR,fmt:'p'},
-    {lbl:'ALB CTOR',m:ov.alb.eCTOR,fmt:'p'},
-    {lbl:'ALB push OR',m:ov.alb.pOR,fmt:'p'},
-    {lbl:'XKX emails sent',m:ov.xkx.eS,fmt:'n'},
-    {lbl:'XKX open rate',m:ov.xkx.eOR,fmt:'p'},
-    {lbl:'XKX CTOR',m:ov.xkx.eCTOR,fmt:'p'},
-    {lbl:'XKX push OR',m:ov.xkx.pOR,fmt:'p'},
-  ];
-  const movers=[];
-  metrics.forEach(({lbl,m,fmt})=>{
-    const delta=wwDelta(m);
-    const curVal=lastVal(m);
-    if(delta===null||curVal===null) return;
-    const dispVal=fmt==='p'?parseFloat(curVal).toFixed(2)+'%':Number(parseFloat(curVal.toString().replace(/[,"\s]/g,''))).toLocaleString();
-    movers.push({lbl,val:dispVal,delta,dispDelta:(delta>=0?'+':'')+delta.toFixed(1)+'%'});
+function renderDowTable(id, data, color) {
+  const table = document.getElementById(id);
+  const vals = Object.values(data);
+  const max = Math.max(...vals), min = Math.min(...vals);
+  table.innerHTML = `<tr><th>Day</th><th style="text-align:right">Avg orders</th><th style="text-align:right">vs min</th></tr>`;
+  Object.entries(data).sort((a,b) => b[1]-a[1]).forEach(([day, val], i) => {
+    const pct = ((val - min) / (max - min) * 100).toFixed(0);
+    const tr = document.createElement('tr');
+    if (i === 0) tr.className = 'highlight-row';
+    tr.innerHTML = `
+      <td><span class="dow-badge" style="background:${color};opacity:${(0.4+0.6*val/max).toFixed(2)}"></span>${day}</td>
+      <td style="text-align:right;font-variant-numeric:tabular-nums;">${val.toLocaleString()}</td>
+      <td style="text-align:right;"><div style="display:flex;align-items:center;justify-content:flex-end;gap:6px;"><div style="width:${Math.round(pct*0.6)}px;height:6px;background:${color};border-radius:2px;opacity:0.7;display:inline-block;"></div><span style="color:var(--muted);font-size:11px;">+${pct}%</span></div></td>`;
+    table.appendChild(tr);
   });
-
-  const ups=movers.filter(m=>m.delta>2);
-  const downs=movers.filter(m=>m.delta<-2);
-  const wks=ov.weeks.filter(w=>w&&w!=='w/w'&&w!=='');
-  const lw=wks[wks.length-1]||'this week', pw=wks[wks.length-2]||'last week';
-
-  let parts=[];
-  if(ups.length) parts.push(`<span style="color:#3b6d11;font-weight:700;">${ups.map(u=>u.lbl+' ('+u.dispDelta+')').join(', ')}</span> improved`);
-  if(downs.length) parts.push(`<span style="color:#a32d2d;font-weight:700;">${downs.map(d=>d.lbl+' ('+d.dispDelta+')').join(', ')}</span> declined`);
-  const summary=parts.length?parts.join(' · '):'Metrics broadly stable week over week.';
-
-  document.getElementById('ww-box').innerHTML=`<strong>Week ${lw} vs ${pw}:</strong> ${summary}`;
-  document.getElementById('ww-pills').innerHTML=[...ups,...downs].map(m=>`
-    <div class="pill" style="border-left:3px solid ${m.delta>0?'#3b6d11':'#a32d2d'};">
-      <div class="plbl">${m.lbl}</div>
-      <div class="pval">${m.val}</div>
-      <div class="pdelta" style="color:${m.delta>0?'#3b6d11':'#a32d2d'};">${m.dispDelta} w/w</div>
-    </div>`).join('');
-  sec.style.display='block';
 }
 
-function mkLine(id,labels,data,color){
-  if(CH[id])CH[id].destroy();
-  const ctx=document.getElementById(id);if(!ctx)return;
-  CH[id]=new Chart(ctx,{type:'line',data:{labels,datasets:[{data,borderColor:color,backgroundColor:color+'22',borderWidth:2.5,pointRadius:3,fill:true,tension:.3}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{font:{size:9},maxRotation:40}},y:{ticks:{font:{size:9}}}}}});
+// ── INIT ──────────────────────────────────────────────────────────────────
+function init() {
+  drawLineChart('resto-daily-chart', RESTO_DAILY, '#ff6b35');
+  drawLineChart('groc-daily-chart', GROC_DAILY, '#4fc3f7');
 }
+window.addEventListener('load', init);
+window.addEventListener('resize', init);
 
-// Parse campaign sheet (email or push)
-function parseCamp(raw){
-  const rows=parseTSV(raw);
-  if(!rows.length) return[];
-  // Find header row containing 'Campaign Name'
-  let hi=-1;
-  for(let i=0;i<Math.min(rows.length,10);i++){
-    if(rows[i].some(c=>c.includes('Campaign Name')||c.includes('Campaign'))){hi=i;break;}
-  }
-  if(hi<0) hi=0;
-  const h=rows[hi];
-  const ci=name=>h.findIndex(c=>c.toLowerCase().includes(name.toLowerCase()));
-  const cN=ci('Campaign Name'),cS=ci('Message Sent'),cOR=ci('Open Rate'),cCTOR=ci('CTOR'),cP=ci('Count Purchases'),cR=ci('Transaction Value'),cU=ci('Unsubscribe'),cC=ci('Click to Conversion');
-  return rows.slice(hi+1).filter(r=>r[cN]&&r[cN].length>3&&!r[cN].startsWith('📌')&&!r[cN].startsWith('Event')).map(r=>({
-    name:r[cN]||'',
-    sent:cleanNum(r[cS]),
-    or:cleanPct(r[cOR]),
-    ctor:r[cCTOR]||'—',
-    purchases:cleanNum(r[cP]),
-    revenue:r[cR]||'€0',
-    unsub:r[cU]||'—',
-    conv:r[cC]||'—'
-  }));
-}
-
-// Parse incrementality sheet
-function parseInc(raw){
-  const rows=parseTSV(raw);
-  if(!rows.length) return[];
-  let hi=-1;
-  for(let i=0;i<Math.min(rows.length,5);i++){
-    if(rows[i].some(c=>c.includes('Program'))){hi=i;break;}
-  }
-  if(hi<0) return[];
-  const h=rows[hi];
-  const ci=n=>h.findIndex(c=>c.toLowerCase().includes(n.toLowerCase()));
-  const cD=0,cPer=ci('Period')||ci('Breakdown'),cPr=ci('Program'),cE=ci('Exposed'),cV=ci('Volume'),cG=ci('GOV'),cU=ci('Active Users');
-  return rows.slice(hi+1).filter(r=>r[cPr]&&r[cPr].length>3).map(r=>({
-    date:r[cD]||'',period:r[cPer]||'',program:r[cPr]||'',
-    exposed:cleanNum(r[cE]),volume:cleanNum(r[cV]),gov:cleanNum(r[cG]),users:cleanNum(r[cU])
-  }));
-}
-
-function orB(v){if(v===null)return'—';const c=v>=40?'bok':v>=20?'bwarn':'bfail';return`<span class="badge ${c}">${v.toFixed(2)}%</span>`;}
-function incB(g){if(g===null)return'<span class="badge binfo">TBC</span>';if(g>1000)return'<span class="badge bok">✅ Positive</span>';if(g<-1000)return'<span class="badge bfail">❌ Negative</span>';return'<span class="badge bwarn">⚠️ Mixed</span>';}
-function npSpan(v,p=''){if(v===null)return'—';const c=v<0?'neg':'pos';return`<span class="${c}">${v>0?'+':''}${p}${fmtN(v)}</span>`;}
-
-function fillE(id,rows){
-  const tb=document.getElementById(id);if(!tb)return;
-  if(!rows.length){tb.innerHTML=`<tr><td colspan="7" style="text-align:center;padding:20px;color:#aaa;">No data — paste the sheet in Update data</td></tr>`;return;}
-  tb.innerHTML=rows.map(r=>`<tr><td style="font-size:10px;">${sn(r.name)}</td><td>${r.sent!==null?fmtN(r.sent):'—'}</td><td>${orB(r.or)}</td><td>${r.ctor}</td><td>${r.purchases!==null?fmtN(r.purchases):'—'}</td><td>${r.revenue}</td><td>${r.unsub}</td></tr>`).join('');
-}
-function fillP(id,rows){
-  const tb=document.getElementById(id);if(!tb)return;
-  if(!rows.length){tb.innerHTML=`<tr><td colspan="6" style="text-align:center;padding:20px;color:#aaa;">No data — paste the sheet in Update data</td></tr>`;return;}
-  tb.innerHTML=rows.map(r=>`<tr><td style="font-size:10px;">${sn(r.name)}</td><td>${r.sent!==null?fmtN(r.sent):'—'}</td><td>${orB(r.or)}</td><td>${r.purchases!==null?fmtN(r.purchases):'—'}</td><td>${r.revenue}</td><td>${r.conv}</td></tr>`).join('');
-}
-function fillI(id,rows){
-  const tb=document.getElementById(id);if(!tb)return;
-  if(!rows.length){tb.innerHTML=`<tr><td colspan="7" style="text-align:center;padding:20px;color:#aaa;">No data — paste the sheet in Update data</td></tr>`;return;}
-  tb.innerHTML=rows.map(r=>`<tr><td style="font-size:10px;">${sn(r.program,40)}</td><td>${r.period}</td><td>${r.exposed!==null?fmtN(r.exposed):'—'}</td><td>${npSpan(r.volume)}</td><td>${npSpan(r.gov,'€')}</td><td>${npSpan(r.users)}</td><td>${incB(r.gov)}</td></tr>`).join('');
-}
-
-// ---- Main render ----
-function go(){
-  saveS();closeModal();
-  const hasData=Object.values(S).some(v=>v.length>0);
-  if(!hasData){alert('Please paste at least the Overview sheet data first.');return;}
-
-  document.getElementById('es').style.display='none';
-  document.getElementById('dash').style.display='block';
-
-  // Overview
-  if(S.overview){
-    const ov=parseOverview();
-    if(ov){
-      renderKPIs(ov.alb,'alb-ekpis','alb-pkpis');
-      renderKPIs(ov.xkx,'xkx-ekpis','xkx-pkpis');
-      buildWW(ov);
-      const wks=ov.weeks.filter(w=>w&&w!=='w/w'&&w!=='');
-      const pn=s=>parseFloat(s.toString().replace(/[,"\s]/g,''))||0;
-      const pp=s=>parseFloat(s.toString().replace('%',''))||0;
-      if(wks.length){
-        mkLine('cAV',wks,ov.alb.eS.vals.slice(0,wks.length).map(pn),'#0071e3');
-        mkLine('cXV',wks,ov.xkx.eS.vals.slice(0,wks.length).map(pn),'#34c759');
-        mkLine('cAR',wks,ov.alb.eOR.vals.slice(0,wks.length).map(pp),'#0071e3');
-        mkLine('cXR',wks,ov.xkx.eOR.vals.slice(0,wks.length).map(pp),'#34c759');
-      }
-      const lw=wks[wks.length-1]||'';
-      const now = new Date();
-  const ts = now.toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'}) + ' · ' + now.toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'});
-  document.getElementById('hdr-sub').textContent=`Data loaded · Latest week: ${lw} · Updated: ${ts}`;
-    } else {
-      document.getElementById('hdr-sub').textContent='Overview data could not be parsed — check format';
-    }
-  }
-
-  // Campaigns
-  if(S.albEmail) fillE('tAE',parseCamp(S.albEmail));
-  if(S.albPush) fillP('tAP',parseCamp(S.albPush));
-  if(S.xkxEmail) fillE('tXE',parseCamp(S.xkxEmail));
-  if(S.xkxPush) fillP('tXP',parseCamp(S.xkxPush));
-
-  // Incrementality
-  const aI=S.albInc?parseInc(S.albInc):[];
-  const xI=S.xkxInc?parseInc(S.xkxInc):[];
-  fillI('tAI',aI); fillI('tXI',xI);
-
-  const all=[...aI,...xI].filter(r=>r.gov!==null);
-  if(all.length){
-    if(CH['cInc'])CH['cInc'].destroy();
-    const ctx=document.getElementById('cInc');
-    if(ctx){
-      const vals=all.map(r=>r.gov);
-      CH['cInc']=new Chart(ctx,{type:'bar',data:{labels:all.map(r=>sn(r.program.replace('ADHOC_','').replace(/_ACTIVE.*/,''),28)+'\n'+r.period.replace(/^\d\. /,'')),datasets:[{data:vals,backgroundColor:vals.map(v=>v>=0?'#34c75966':'#ff3b3066'),borderColor:vals.map(v=>v>=0?'#34c759':'#ff3b30'),borderWidth:1.5}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{font:{size:8},maxRotation:45}},y:{ticks:{font:{size:9},callback:v=>'€'+(v/1000).toFixed(0)+'k'}}}}});
-    }
-  }
-}
-
-function swT(id,btn){
-  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
-  document.querySelectorAll('.tp').forEach(p=>p.classList.remove('active'));
-  document.getElementById('tp-'+id).classList.add('active');
-  btn.classList.add('active');
-}
+renderHourlyBars('resto-bars', restoHourly, 'var(--resto)');
+renderHourlyBars('grocery-bars', grocHourly, 'var(--grocery)');
+renderRVBars('rv-bars', restoHsum, grocHsum);
+renderDowTable('resto-dow', restoDow, 'var(--resto)');
+renderDowTable('groc-dow', grocDow, 'var(--grocery)');
 </script>
 </body>
 </html>
